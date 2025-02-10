@@ -13,8 +13,8 @@ impl JsonParser {
     pub fn parse(&mut self) -> Option<Json> {
         let root = self.parse_value();
         match root {
-            Some(JsonNode::Object(obj)) => Some(Json::new(JsonNode::Object(obj))),
-            Some(JsonNode::Array(arr)) => Some(Json::new(JsonNode::Array(arr))),
+            Some(JsonNode::Object(obj)) => Some(JsonNode::Object(obj).move_as_root()),
+            Some(JsonNode::Array(arr)) => Some(JsonNode::Array(arr).move_as_root()),
             _ => None,
         }
     }

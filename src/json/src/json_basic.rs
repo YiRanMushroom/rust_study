@@ -32,8 +32,8 @@ pub struct Json {
 }
 
 impl Json {
-    pub fn new(root: JsonNode) -> Json {
-        Json { root }
+    pub fn new() -> Json {
+        Json { root: JsonNode::Null }
     }
 
     pub fn get_root(&self) -> &JsonNode {
@@ -268,5 +268,12 @@ impl_from_and_to_json_for_number!(i8, i16, i32, i64, i128, isize, u8, u16, u32, 
 impl JsonNode {
     pub fn new() -> JsonNode {
         JsonNode::Null
+    }
+
+    pub fn move_as_root(self) -> Json {
+        match &self {
+            JsonNode::Object(_) | JsonNode::Array(_) => Json { root: self },
+            _ => panic!("Cannot move non-object or non-array type as root"),
+        }
     }
 }

@@ -33,7 +33,7 @@ fn main() {
         field3: "Hello, world!".to_string(),
     };
 
-    let test_struct_json = Json::new(test_struct.to_json());
+    let test_struct_json = test_struct.to_json().move_as_root();
 
     let another_test_struct = TestStruct::from_json(test_struct_json.get_root());
 
@@ -45,7 +45,7 @@ fn main() {
     println!("{}", test_struct_json);
     println!("{:?}", another_test_struct);
 
-    let test_struct2_json = Json::new(test_struct2.to_json());
+    let test_struct2_json = test_struct2.to_json().move_as_root();
     println!("{}", test_struct2_json);
 
     let another_test_struct2 = TestStruct2::from_json(test_struct2_json.get_root());
@@ -55,6 +55,8 @@ fn main() {
 
     json["name".to_string()] = JsonNode::String("Bob".to_string());
     json["courses".to_string()][0]["credits".to_string()] = JsonNode::Null;
+
+    let mut test_no_rec = JsonNode::Object(std::collections::HashMap::new()).move_as_root();
 
     println!("{}", json);
 }
