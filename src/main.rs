@@ -1,13 +1,8 @@
-use crate::app::json_basic::{FromAndToJson, Json, JsonNode};
-use std::io::stdin;
+#[macro_use]
+extern crate json;
 
-mod app;
-use crate::app::{json_lexer, json_parser, parse_json};
+use json::*;
 
-extern crate macros;
-use macros::{print_struct_info, JsonStruct};
-
-#[print_struct_info]
 #[JsonStruct]
 #[derive(Debug, Clone)]
 struct TestStruct {

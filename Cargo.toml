@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 # add macros as a dependency
-macros = { path = "./macros" }
+static_assertions = "1.1.0"
+json = { path = "src/json" }

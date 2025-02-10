@@ -1,6 +1,5 @@
 use std::collections::LinkedList;
-use crate::app::json_basic;
-use json_basic::JsonToken;
+use crate::json_basic::*;
 
 pub struct JsonLexer<'a> {
     input: &'a str,
