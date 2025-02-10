@@ -9,17 +9,24 @@ use macros::{print_struct_info, JsonStruct};
 
 #[print_struct_info]
 #[JsonStruct]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct TestStruct {
     field1: i32,
     field2: f64,
     field3: String,
 }
 
+#[JsonStruct]
+#[derive(Debug)]
+struct TestStruct2 {
+    field1: i32,
+    field2: TestStruct,
+}
+
 fn main() {
     println!("Hello, world!");
 
-    let hash_map = std::collections::HashMap::new();
+    // let hash_map = std::collections::HashMap::new();
 
     let mut input = String::new();
 
@@ -35,8 +42,19 @@ fn main() {
 
     let another_test_struct = TestStruct::from_json(test_struct_json.get_root());
 
+    let test_struct2 = TestStruct2 {
+        field1: 42,
+        field2: another_test_struct.clone(),
+    };
+
     println!("{}", test_struct_json);
     println!("{:?}", another_test_struct);
+
+    let test_struct2_json = Json::new(test_struct2.to_json());
+    println!("{}", test_struct2_json);
+
+    let another_test_struct2 = TestStruct2::from_json(test_struct2_json.get_root());
+    println!("{:?}", another_test_struct2);
 
     let mut json = parse_json(json_str).unwrap();
 

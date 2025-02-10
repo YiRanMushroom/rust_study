@@ -51,7 +51,7 @@ impl Display for JsonNode {
             JsonNode::Object(obj) => {
                 write!(f, "{{")?;
                 for (idx, (k, v)) in obj.iter().enumerate() {
-                    write!(f, "\"{}\":", k)?;
+                    write!(f, "\"{}\": ", k)?;
                     (*v).fmt(f)?;
                     if idx != obj.len() - 1 {
                         write!(f, ", ")?;
