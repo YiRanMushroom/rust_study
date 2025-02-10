@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Pointer};
+use std::fmt::{Display, Formatter};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum JsonToken {
     String(String),
     Number(f64),
@@ -16,7 +17,7 @@ pub enum JsonToken {
     Error,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum JsonNode {
     Object(HashMap<String, JsonNode>),
     Array(Vec<JsonNode>),
@@ -89,5 +90,183 @@ impl Display for JsonNode {
 impl Display for Json {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.root.fmt(f)
+    }
+}
+
+impl Deref for Json {
+    type Target = JsonNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.root
+    }
+}
+
+impl DerefMut for Json {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.root
+    }
+}
+
+impl Index<String> for JsonNode {
+    type Output = JsonNode;
+
+    fn index(&self, index: String) -> &Self::Output {
+        match self {
+            JsonNode::Object(obj) => {
+                if obj.contains_key(&index) {
+                    obj.get(&index).unwrap()
+                } else {
+                    panic!("Key not found")
+                }
+            }
+            _ => panic!("Cannot index non-object type"),
+        }
+    }
+}
+
+impl IndexMut<String> for JsonNode {
+    fn index_mut(&mut self, index: String) -> &mut Self {
+        match self {
+            JsonNode::Object(obj) => {
+                if obj.contains_key(&index) {
+                    obj.get_mut(&index).unwrap()
+                } else {
+                    obj.insert(index.to_string(), JsonNode::Null);
+                    obj.get_mut(&index).unwrap()
+                }
+            }
+            _ => panic!("Cannot index non-object type"),
+        }
+    }
+}
+
+impl Index<usize> for JsonNode {
+    type Output = JsonNode;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match self {
+            JsonNode::Array(arr) => {
+                if index < arr.len() {
+                    arr.get(index).unwrap()
+                } else {
+                    panic!("Index out of bounds")
+                }
+            }
+            _ => panic!("Cannot index non-array type"),
+        }
+    }
+}
+
+impl IndexMut<usize> for JsonNode {
+    fn index_mut(&mut self, index: usize) -> &mut Self {
+        match self {
+            JsonNode::Array(arr) => {
+                if index < arr.len() {
+                    arr.get_mut(index).unwrap()
+                } else {
+                    panic!("Index out of bounds")
+                }
+            }
+            _ => panic!("Cannot index non-array type"),
+        }
+    }
+}
+
+pub trait FromAndToJson {
+    fn from_json(json: &JsonNode) -> Self;
+    fn to_json(&self) -> JsonNode;
+}
+
+impl FromAndToJson for String {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::String(s) => s.clone(),
+            _ => panic!("Cannot convert non-string type to string"),
+        }
+    }
+
+    fn to_json(&self) -> JsonNode {
+        JsonNode::String(self.clone())
+    }
+}
+
+impl FromAndToJson for Vec<JsonNode> {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Array(arr) => arr.clone(),
+            _ => panic!("Cannot convert non-array type to array"),
+        }
+    }
+
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Array(self.clone())
+    }
+}
+
+impl FromAndToJson for HashMap<String, JsonNode> {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Object(obj) => obj.clone(),
+            _ => panic!("Cannot convert non-object type to object"),
+        }
+    }
+
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Object(self.clone())
+    }
+}
+
+impl FromAndToJson for bool {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Boolean(b) => b.clone(),
+            _ => panic!("Cannot convert non-boolean type to boolean"),
+        }
+    }
+
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Boolean(self.clone())
+    }
+}
+
+// all number types
+impl FromAndToJson for f64 {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Number(n) => n.clone(),
+            _ => panic!("Cannot convert non-number type to number"),
+        }
+    }
+
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Number(self.clone())
+    }
+}
+
+macro_rules! impl_from_and_to_json_for_number {
+    ($($t:ty),*) => {
+        $(
+            impl FromAndToJson for $t {
+                fn from_json(json: &JsonNode) -> Self {
+                    match json {
+                        JsonNode::Number(n) => n.clone() as $t,
+                        _ => panic!("Cannot convert non-number type to number"),
+                    }
+                }
+
+                fn to_json(&self) -> JsonNode {
+                    JsonNode::Number(self.clone() as f64)
+                }
+            }
+        )*
+    };
+}
+
+impl_from_and_to_json_for_number!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize);
+
+// impl new trait for JsonNode
+impl JsonNode {
+    pub fn new() -> JsonNode {
+        JsonNode::Null
     }
 }
