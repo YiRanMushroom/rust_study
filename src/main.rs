@@ -4,10 +4,15 @@ use std::io::stdin;
 mod app;
 use crate::app::{json_lexer, json_parser};
 
+extern crate macros;
+use macros::print_ident;
+
 fn main() {
     println!("Hello, world!");
 
     let mut input = String::new();
+
+    print_ident!(input);
 
     match stdin().read_line(&mut input) {
         Ok(_) => {

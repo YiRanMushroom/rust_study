@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Pointer};
-use std::iter::Map;
 
 #[derive(Debug)]
 pub enum JsonToken {
@@ -88,7 +87,7 @@ impl Display for JsonNode {
 }
 
 impl Display for Json {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.root.fmt(f)
     }
 }
