@@ -18,10 +18,6 @@ struct TestStruct2 {
 fn main() {
     println!("Hello, world!");
 
-    // let hash_map = std::collections::HashMap::new();
-
-    let mut input = String::new();
-
     let json_str = "{\"name\":\"Alice\",\"age\":30.,\"is_student\":1e-2,\"courses\":[{\"name\":\"Math\",\"credits\":3e3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null}";
 
     let test_struct = TestStruct {
@@ -53,9 +49,6 @@ fn main() {
     json["name".to_string()] = JsonNode::String("Bob".to_string());
     json["courses".to_string()][0]["credits".to_string()] = JsonNode::Null;
 
-    let mut test_no_rec = JsonNode::Object(std::collections::HashMap::new()).move_as_root();
-
-    // println!("{}", json);
     for (idx, v) in json.obj_iter().unwrap().enumerate() {
         println!("[{}]: <\"{}\": {}>", idx, v.0, v.1);
     }

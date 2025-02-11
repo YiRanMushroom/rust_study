@@ -48,8 +48,6 @@ pub fn json_struct(item: TokenStream) -> TokenStream {
 
     };
 
-    println!("{}", expanded);
-
     TokenStream::from(quote! {
         #expanded
     })

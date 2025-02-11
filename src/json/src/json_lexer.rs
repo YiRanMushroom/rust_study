@@ -33,41 +33,43 @@ impl<'a> JsonLexer<'a> {
     }
 
     fn handle_char(&mut self, c: char) -> Option<JsonToken> {
-        match c {
-            '"' => self.handle_string(),
-            '0'..='9' | 'e' | 'E' | '.' | '+' | '-' => self.handle_number(c),
-            't' | 'f' => self.handle_boolean(c),
-            'n' => self.handle_null(),
-            ',' => {
-                self.move_to_next(',');
-                Some(JsonToken::Comma)
-            }
-            ':' => {
-                self.move_to_next(':');
-                Some(JsonToken::Colon)
-            }
-            '{' => {
-                self.move_to_next('{');
-                Some(JsonToken::LeftBrace)
-            }
-            '}' => {
-                self.move_to_next('}');
-                Some(JsonToken::RightBrace)
-            }
-            '[' => {
-                self.move_to_next('[');
-                Some(JsonToken::LeftBracket)
-            }
-            ']' => {
-                self.move_to_next(']');
-                Some(JsonToken::RightBracket)
-            }
-            _ => {
-                self.move_to_next(c);
-                if c.is_whitespace() {
-                    None
-                } else {
-                    Some(JsonToken::Error)
+        loop {
+            match c {
+                '"' => break self.handle_string(),
+                '0'..='9' | 'e' | 'E' | '.' | '+' | '-' => break self.handle_number(c),
+                't' | 'f' => break self.handle_boolean(c),
+                'n' => break self.handle_null(),
+                ',' => {
+                    self.move_to_next(',');
+                    break Some(JsonToken::Comma);
+                }
+                ':' => {
+                    self.move_to_next(':');
+                    break Some(JsonToken::Colon);
+                }
+                '{' => {
+                    self.move_to_next('{');
+                    break Some(JsonToken::LeftBrace);
+                }
+                '}' => {
+                    self.move_to_next('}');
+                    break Some(JsonToken::RightBrace);
+                }
+                '[' => {
+                    self.move_to_next('[');
+                    break Some(JsonToken::LeftBracket);
+                }
+                ']' => {
+                    self.move_to_next(']');
+                    break Some(JsonToken::RightBracket);
+                }
+                _ => {
+                    self.move_to_next(c);
+                    if c.is_whitespace() {
+                        break None;
+                    } else {
+                        continue;
+                    }
                 }
             }
         }
@@ -141,13 +143,13 @@ impl<'a> JsonLexer<'a> {
                 }
                 Some('\\') => match self.handle_escape() {
                     Some(c) => string.push(c),
-                    None => return Some(JsonToken::Error),
+                    None => return None,
                 },
                 Some(c) => {
                     string.push(c);
                     self.move_to_next(c);
                 }
-                None => return Some(JsonToken::Error),
+                None => return None,
             }
         }
     }
@@ -168,7 +170,7 @@ impl<'a> JsonLexer<'a> {
 
         match number.parse() {
             Ok(n) => Some(JsonToken::Number(n)),
-            Err(_) => Some(JsonToken::Error),
+            Err(_) => None,
         }
     }
 
@@ -189,7 +191,7 @@ impl<'a> JsonLexer<'a> {
         match boolean.as_str() {
             "true" => Some(JsonToken::Boolean(true)),
             "false" => Some(JsonToken::Boolean(false)),
-            _ => Some(JsonToken::Error),
+            _ => None,
         }
     }
 
@@ -209,7 +211,7 @@ impl<'a> JsonLexer<'a> {
 
         match null.as_str() {
             "null" => Some(JsonToken::Null),
-            _ => Some(JsonToken::Error),
+            _ => None,
         }
     }
 }
@@ -220,9 +222,6 @@ pub fn parse_all(input: &str) -> (LinkedList<JsonToken>, bool) {
 
     loop {
         match lexer.next_token() {
-            Some(JsonToken::Error) => {
-                break (tokens, false);
-            }
             Some(token) => tokens.push_back(token),
             None => break (tokens, true),
         }

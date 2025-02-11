@@ -14,7 +14,6 @@ pub enum JsonToken {
     RightBrace,
     LeftBracket,
     RightBracket,
-    Error,
 }
 
 #[derive(Debug, Clone)]
