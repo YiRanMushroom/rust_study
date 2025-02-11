@@ -2,8 +2,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
-#[proc_macro_attribute]
-pub fn JsonStruct(_attr: TokenStream, item: TokenStream) -> TokenStream {
+#[proc_macro_derive(JsonStruct)]
+pub fn json_struct(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let name = &input.ident;
     let fields = if let Data::Struct(data_struct) = &input.data {
@@ -51,7 +51,6 @@ pub fn JsonStruct(_attr: TokenStream, item: TokenStream) -> TokenStream {
     println!("{}", expanded);
 
     TokenStream::from(quote! {
-        #input
         #expanded
     })
 }

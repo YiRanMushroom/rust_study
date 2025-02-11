@@ -1,18 +1,15 @@
-#[macro_use]
 extern crate json;
 
 use json::*;
 
-#[JsonStruct]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, JsonStruct)]
 struct TestStruct {
     field1: i32,
     field2: f64,
     field3: String,
 }
 
-#[JsonStruct]
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, JsonStruct)]
 struct TestStruct2 {
     field1: i32,
     field2: TestStruct,
@@ -58,5 +55,8 @@ fn main() {
 
     let mut test_no_rec = JsonNode::Object(std::collections::HashMap::new()).move_as_root();
 
-    println!("{}", json);
+    // println!("{}", json);
+    for (idx, (k, v)) in json.obj_iter().unwrap().enumerate() {
+        println!("{}.{}: {}", idx, k, v);
+    }
 }

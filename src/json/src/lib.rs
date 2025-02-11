@@ -4,7 +4,6 @@ mod json_parser;
 
 use json_lexer::parse_all as lex_string_to_tokens;
 use json_parser::parse_all as parse_tokens_to_json;
-#[macro_export]
 extern crate macros;
 
 pub use macros::JsonStruct;

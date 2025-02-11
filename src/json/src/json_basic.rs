@@ -33,7 +33,9 @@ pub struct Json {
 
 impl Json {
     pub fn new() -> Json {
-        Json { root: JsonNode::Null }
+        Json {
+            root: JsonNode::Null,
+        }
     }
 
     pub fn get_root(&self) -> &JsonNode {
@@ -274,6 +276,134 @@ impl JsonNode {
         match &self {
             JsonNode::Object(_) | JsonNode::Array(_) => Json { root: self },
             _ => panic!("Cannot move non-object or non-array type as root"),
+        }
+    }
+}
+
+pub struct JsonObjIterRef<'a> {
+    map_iter: std::collections::hash_map::Iter<'a, String, JsonNode>,
+}
+
+pub struct JsonObjIterMut<'a> {
+    map_iter: std::collections::hash_map::IterMut<'a, String, JsonNode>,
+}
+
+pub struct JsonObjIntoIter {
+    map_iter: std::collections::hash_map::IntoIter<String, JsonNode>,
+}
+
+pub struct JsonArrIterRef<'a> {
+    vec_iter: std::slice::Iter<'a, JsonNode>,
+}
+
+pub struct JsonArrIterMut<'a> {
+    vec_iter: std::slice::IterMut<'a, JsonNode>,
+}
+
+pub struct JsonArrIntoIter {
+    vec_iter: std::vec::IntoIter<JsonNode>,
+}
+
+impl<'a> Iterator for JsonObjIterRef<'a> {
+    type Item = (&'a String, &'a JsonNode);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.map_iter.next()
+    }
+}
+
+impl<'a> Iterator for JsonObjIterMut<'a> {
+    type Item = (&'a String, &'a mut JsonNode);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.map_iter.next()
+    }
+}
+
+impl Iterator for JsonObjIntoIter {
+    type Item = (String, JsonNode);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.map_iter.next()
+    }
+}
+
+impl<'a> Iterator for JsonArrIterRef<'a> {
+    type Item = &'a JsonNode;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.vec_iter.next()
+    }
+}
+
+impl<'a> Iterator for JsonArrIterMut<'a> {
+    type Item = &'a mut JsonNode;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.vec_iter.next()
+    }
+}
+
+impl Iterator for JsonArrIntoIter {
+    type Item = JsonNode;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.vec_iter.next()
+    }
+}
+
+impl JsonNode {
+    pub fn obj_iter(&self) -> Option<JsonObjIterRef> {
+        match self {
+            JsonNode::Object(obj) => Some(JsonObjIterRef {
+                map_iter: obj.iter(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn obj_iter_mut(&mut self) -> Option<JsonObjIterMut> {
+        match self {
+            JsonNode::Object(obj) => Some(JsonObjIterMut {
+                map_iter: obj.iter_mut(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn obj_into_iter(self) -> Option<JsonObjIntoIter> {
+        match self {
+            JsonNode::Object(obj) => Some(JsonObjIntoIter {
+                map_iter: obj.into_iter(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn arr_iter(&self) -> Option<JsonArrIterRef> {
+        match self {
+            JsonNode::Array(arr) => Some(JsonArrIterRef {
+                vec_iter: arr.iter(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn arr_iter_mut(&mut self) -> Option<JsonArrIterMut> {
+        match self {
+            JsonNode::Array(arr) => Some(JsonArrIterMut {
+                vec_iter: arr.iter_mut(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn arr_into_iter(self) -> Option<JsonArrIntoIter> {
+        match self {
+            JsonNode::Array(arr) => Some(JsonArrIntoIter {
+                vec_iter: arr.into_iter(),
+            }),
+            _ => None,
         }
     }
 }
