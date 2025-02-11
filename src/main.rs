@@ -22,7 +22,7 @@ fn main() {
 
     let mut input = String::new();
 
-    let json_str = "{\"name\":\"Alice\",\"age\":30,\"is_student\":false,\"courses\":[{\"name\":\"Math\",\"credits\":3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null}";
+    let json_str = "{\"name\":\"Alice\",\"age\":30.,\"is_student\":1e-2,\"courses\":[{\"name\":\"Math\",\"credits\":3e3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null}";
 
     let test_struct = TestStruct {
         field1: 42,
@@ -56,7 +56,7 @@ fn main() {
     let mut test_no_rec = JsonNode::Object(std::collections::HashMap::new()).move_as_root();
 
     // println!("{}", json);
-    for (idx, (k, v)) in json.obj_iter().unwrap().enumerate() {
-        println!("{}.{}: {}", idx, k, v);
+    for (idx, v) in json.obj_iter().unwrap().enumerate() {
+        println!("[{}]: <\"{}\": {}>", idx, v.0, v.1);
     }
 }

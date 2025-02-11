@@ -1,5 +1,5 @@
-use std::collections::LinkedList;
 use crate::json_basic::*;
+use std::collections::LinkedList;
 
 pub struct JsonLexer<'a> {
     input: &'a str,
@@ -35,7 +35,7 @@ impl<'a> JsonLexer<'a> {
     fn handle_char(&mut self, c: char) -> Option<JsonToken> {
         match c {
             '"' => self.handle_string(),
-            '0'..='9' => self.handle_number(c),
+            '0'..='9' | 'e' | 'E' | '.' | '+' | '-' => self.handle_number(c),
             't' | 'f' => self.handle_boolean(c),
             'n' => self.handle_null(),
             ',' => {
@@ -158,7 +158,7 @@ impl<'a> JsonLexer<'a> {
         self.move_to_next(c);
 
         while let Some(c) = self.peek_char() {
-            if c.is_digit(10) || c == '.' {
+            if c.is_digit(10) || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-' {
                 number.push(c);
                 self.move_to_next(c);
             } else {
