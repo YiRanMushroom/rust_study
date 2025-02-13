@@ -35,13 +35,13 @@ pub fn json_struct(item: TokenStream) -> TokenStream {
     let expanded = quote! {
 
         impl json::FromAndToJson for #name {
-            fn to_json(&self) -> JsonNode {
-                let mut json = JsonNode::Object(std::collections::HashMap::new());
+            fn to_json(&self) -> json::JsonNode {
+                let mut json = json::JsonNode::Object(std::collections::HashMap::new());
                 #(#to_json_fields)*
                 json
             }
 
-            fn from_json(json: &JsonNode) -> Self {
+            fn from_json(json: &json::JsonNode) -> Self {
                 Self{#(#from_json_fields)*}
             }
         }

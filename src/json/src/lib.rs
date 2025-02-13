@@ -6,8 +6,8 @@ use json_lexer::parse_all as lex_string_to_tokens;
 use json_parser::parse_all as parse_tokens_to_json;
 extern crate macros;
 
-pub use macros::JsonStruct;
-
+#[macro_use]
+pub use macros::JsonStruct as JsonStruct;
 pub use json_basic::Json as Json;
 pub use json_basic::JsonNode as JsonNode;
 pub use json_basic::FromAndToJson as FromAndToJson;
