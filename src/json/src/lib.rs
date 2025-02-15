@@ -7,7 +7,7 @@ use json_parser::parse_all as parse_tokens_to_json;
 extern crate macros;
 
 #[macro_use]
-pub use macros::JsonStruct as JsonStruct;
+pub use macros::JsonType as JsonType;
 pub use json_basic::Json as Json;
 pub use json_basic::JsonNode as JsonNode;
 pub use json_basic::FromAndToJson as FromAndToJson;

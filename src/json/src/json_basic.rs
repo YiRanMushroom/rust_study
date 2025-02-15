@@ -405,4 +405,22 @@ impl JsonNode {
             _ => None,
         }
     }
+
+    pub fn insert(&mut self, key: String, value: JsonNode) {
+        match self {
+            JsonNode::Object(obj) => {
+                obj.insert(key, value);
+            }
+            _ => panic!("Cannot insert into non-object type"),
+        }
+    }
+
+    pub fn push(&mut self, value: JsonNode) {
+        match self {
+            JsonNode::Array(arr) => {
+                arr.push(value);
+            }
+            _ => panic!("Cannot push into non-array type"),
+        }
+    }
 }
