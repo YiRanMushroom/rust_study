@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
+use syn::punctuated::Pair::Punctuated;
 use syn::LitInt;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
-use syn::punctuated::Pair::Punctuated;
 
 fn json_struct(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
@@ -45,12 +45,9 @@ fn json_struct(input: DeriveInput) -> TokenStream {
                 Self{#(#from_json_fields)*}
             }
         }
-
     };
 
-    TokenStream::from(quote! {
-        #expanded
-    })
+    TokenStream::from(expanded)
 }
 
 fn json_tuple(input: DeriveInput) -> TokenStream {
@@ -82,11 +79,13 @@ fn json_tuple(input: DeriveInput) -> TokenStream {
         }
     });
 
+    let fields_len = fields.len();
+
     let expanded = quote! {
 
         impl json::FromAndToJson for #name {
             fn to_json(&self) -> json::JsonNode {
-                let mut json = json::JsonNode::Array(std::vec::Vec::new());
+                let mut json = json::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                 #(#to_json_fields)*
                 json
             }
@@ -98,9 +97,7 @@ fn json_tuple(input: DeriveInput) -> TokenStream {
 
     };
 
-    TokenStream::from(quote! {
-        #expanded
-    })
+    TokenStream::from(expanded)
 }
 
 /*
@@ -191,18 +188,6 @@ fn json_enum(input: DeriveInput) -> TokenStream {
         }
     });
 
-    // TestEnum::Variant1(p0) => {
-    //     json["type".to_string()] = json::JsonNode::String("Variant1".to_string());
-    //     json["v".to_string()] = p0.to_json();
-    // }
-    // TestEnum::Variant2 => {
-    //     json["type".to_string()] = json::JsonNode::String("Variant2".to_string());
-    // }
-    // TestEnum::Variant3(v0, v1) => {
-    //     json["type".to_string()] = json::JsonNode::String("Variant3".to_string());
-    //     json["v".to_string()][0] = v0.to_json();
-    //     json["v".to_string()][1] = v1.to_json();
-
     let to_json_variants = variants.iter().map(|variant| {
         let variant_name = &variant.ident;
         let variant_name_str = variant_name.to_string();
@@ -251,10 +236,12 @@ fn json_enum(input: DeriveInput) -> TokenStream {
                 }
             });
 
+            let fields_len = fields.len();
+
             quote! {
                 #name::#variant_name(#(#idx_tokens)*) => {
                     json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
-                    json["value".to_string()] = json::JsonNode::Array(std::vec::Vec::new());
+                    json["value".to_string()] = json::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                     #(#field_init_quotes)*
                 }
             }
@@ -283,18 +270,16 @@ fn json_enum(input: DeriveInput) -> TokenStream {
         }
     };
 
-    TokenStream::from(quote! {
-        #expanded
-    })
+    TokenStream::from(expanded)
 }
 
 #[proc_macro_derive(JsonType)]
 pub fn json_type(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let name = &input.ident;
-    if let Data::Struct(data_struct) = &input.data {
+    if let Data::Struct(_) = &input.data {
         return json_struct(input);
-    } else if let Data::Enum(data_enum) = &input.data {
+    } else if let Data::Enum(_) = &input.data {
         return json_enum(input);
     } else {
         panic!("Only struct and enum are supported");

@@ -44,7 +44,7 @@ mod tests {
         let another_first_variant = TestEnum::from_json(first_variant_json.get_root());
         assert_eq!(first_variant, another_first_variant);
 
-        let second_variant = TestEnum::Variant2("Hello, world!".to_string());
+        let second_variant = TestEnum::Variant2("Hi, Dad!".to_string());
         let second_variant_json = second_variant.to_json().move_as_root();
         let another_second_variant = TestEnum::from_json(second_variant_json.get_root());
         assert_eq!(second_variant, another_second_variant);
@@ -60,7 +60,7 @@ mod tests {
         let test_struct = TestStruct {
             field1: 42,
             field2: 3.14,
-            field3: "Hello, world!".to_string(),
+            field3: "Hi, Mom!".to_string(),
         };
 
         let test_struct_json = test_struct.to_json().move_as_root();

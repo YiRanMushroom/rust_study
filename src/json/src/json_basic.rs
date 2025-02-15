@@ -423,4 +423,60 @@ impl JsonNode {
             _ => panic!("Cannot push into non-array type"),
         }
     }
+
+    pub fn reserve(&mut self, additional: usize) {
+        match self {
+            JsonNode::Array(arr) => {
+                arr.reserve(additional);
+            }
+            _ => panic!("Cannot reserve into non-array type"),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            JsonNode::Object(obj) => obj.len(),
+            JsonNode::Array(arr) => arr.len(),
+            _ => panic!("Cannot get length of non-object or non-array type"),
+        }
+    }
+
+    pub fn resize(&mut self, new_len: usize) {
+        match self {
+            JsonNode::Array(arr) => {
+                arr.resize(new_len, JsonNode::Null);
+            }
+            _ => panic!("Cannot resize non-array type"),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        match self {
+            JsonNode::Object(obj) => {
+                obj.clear();
+            }
+            JsonNode::Array(arr) => {
+                arr.clear();
+            }
+            _ => panic!("Cannot clear non-object or non-array type"),
+        }
+    }
+
+    pub fn remove(&mut self, key: &str) -> Option<JsonNode> {
+        match self {
+            JsonNode::Object(obj) => {
+                obj.remove(key)
+            }
+            _ => panic!("Cannot remove from non-object type"),
+        }
+    }
+
+    pub fn contains_key(&self, key: &str) -> bool {
+        match self {
+            JsonNode::Object(obj) => {
+                obj.contains_key(key)
+            }
+            _ => panic!("Cannot check key in non-object type"),
+        }
+    }
 }
