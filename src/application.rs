@@ -23,6 +23,10 @@ enum TestEnum {
     Variant1,
     Variant2(String),
     Variant3(i32, f64),
+    Variant4 {
+        field1: i32,
+        field2: f64,
+    },
 }
 
 #[cfg(test)]
@@ -53,6 +57,14 @@ mod tests {
         let third_variant_json = third_variant.to_json().move_as_root();
         let another_third_variant = TestEnum::from_json(third_variant_json.get_root());
         assert_eq!(third_variant, another_third_variant);
+
+        let fourth_variant = TestEnum::Variant4 {
+            field1: 42,
+            field2: 3.14,
+        };
+        let fourth_variant_json = fourth_variant.to_json().move_as_root();
+        let another_fourth_variant = TestEnum::from_json(fourth_variant_json.get_root());
+        assert_eq!(fourth_variant, another_fourth_variant);
     }
 
     #[test]

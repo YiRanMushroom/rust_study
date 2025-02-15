@@ -161,8 +161,19 @@ fn json_enum(input: DeriveInput) -> TokenStream {
             return quote! {
                 #variant_name_str => #name::#variant_name,
             };
+        } else if let Fields::Named(fields_named) = &variant.fields {
+            let named_fields_init_quotes = fields_named.named.iter().map(|field| {
+                let field_name = field.ident.as_ref().unwrap();
+                let field_type = &field.ty;
+                quote! {
+                    #field_name: #field_type::from_json(&json["value".to_string()][stringify!(#field_name).to_string()]),
+                }
+            });
+            return quote! {
+                #variant_name_str => #name::#variant_name{#(#named_fields_init_quotes)*},
+            };
         } else {
-            panic!("Only unit and unnamed fields are supported");
+            panic!("Not supported because it is not unit, named or unnamed fields");
         };
         if fields.len() == 0 {
             quote! {
@@ -199,7 +210,37 @@ fn json_enum(input: DeriveInput) -> TokenStream {
                     json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
                 }
             };
-        } else {
+        } else if let Fields::Named(fields_named) = &variant.fields {
+            // let named_fields_init_quotes = fields_named.named.iter().map(|field| {
+            //     let field_name = field.ident.as_ref().unwrap();
+            //     quote! {
+            //         json["value".to_string()][stringify!(#field_name).to_string()] = #field_name.to_json();
+            //     }
+            // });
+            // quote! {
+            //     #name::#variant_name(#(#idx_tokens)*) => {
+            //         json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
+            //         json["value".to_string()] = json::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
+            //         #(#field_init_quotes)*
+            //     }
+            // }
+            let quote_identifiers = fields_named.named.iter().map(|field| {
+                field.ident.as_ref().unwrap()
+            });
+            let field_init_quotes = fields_named.named.iter().map(|field| {
+                let field_name = field.ident.as_ref().unwrap();
+                quote! {
+                    json["value".to_string()][stringify!(#field_name).to_string()] = #field_name.to_json();
+                }
+            });
+            return quote! {
+                #name::#variant_name{#(#quote_identifiers),*} => {
+                    json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
+                    json["value".to_string()] = json::JsonNode::Object(std::collections::HashMap::new());
+                    #(#field_init_quotes)*
+                }
+            };
+        }  else {
             panic!("Only unit and unnamed fields are supported");
         };
         if fields.len() == 0 {
