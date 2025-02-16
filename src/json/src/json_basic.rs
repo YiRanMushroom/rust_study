@@ -12,23 +12,9 @@ pub enum JsonNode {
     Null,
 }
 
-pub struct Json {
-    root: JsonNode,
-}
-
-impl Json {
-    pub fn new() -> Json {
-        Json {
-            root: JsonNode::Null,
-        }
-    }
-
-    pub fn get_root(&self) -> &JsonNode {
-        &self.root
-    }
-
-    pub fn get_root_mut(&mut self) -> &mut JsonNode {
-        &mut self.root
+impl JsonNode {
+    pub fn new() -> JsonNode {
+        JsonNode::Null
     }
 }
 
@@ -71,26 +57,6 @@ impl Display for JsonNode {
         };
 
         Ok(())
-    }
-}
-
-impl Display for Json {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.root.fmt(f)
-    }
-}
-
-impl Deref for Json {
-    type Target = JsonNode;
-
-    fn deref(&self) -> &Self::Target {
-        &self.root
-    }
-}
-
-impl DerefMut for Json {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.root
     }
 }
 
@@ -227,20 +193,6 @@ impl FromAndToJson for f64 {
 
     fn to_json(&self) -> JsonNode {
         JsonNode::Number(self.clone())
-    }
-}
-
-// impl new trait for JsonNode
-impl JsonNode {
-    pub fn new() -> JsonNode {
-        JsonNode::Null
-    }
-
-    pub fn move_as_root(self) -> Json {
-        match &self {
-            JsonNode::Object(_) | JsonNode::Array(_) => Json { root: self },
-            _ => panic!("Cannot move non-object or non-array type as root"),
-        }
     }
 }
 

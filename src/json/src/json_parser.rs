@@ -11,11 +11,11 @@ impl JsonParser {
         JsonParser { tokens }
     }
 
-    pub fn parse(&mut self) -> Option<Json> {
+    pub fn parse(&mut self) -> Option<JsonNode> {
         let root = self.parse_value();
         match root {
-            Some(JsonNode::Object(obj)) => Some(JsonNode::Object(obj).move_as_root()),
-            Some(JsonNode::Array(arr)) => Some(JsonNode::Array(arr).move_as_root()),
+            Some(JsonNode::Object(obj)) => Some(JsonNode::Object(obj)),
+            Some(JsonNode::Array(arr)) => Some(JsonNode::Array(arr)),
             _ => None,
         }
     }
@@ -77,7 +77,7 @@ impl JsonParser {
     }
 }
 
-pub fn parse_all(tokens: LinkedList<JsonToken>) -> Option<Json> {
+pub fn parse_all(tokens: LinkedList<JsonToken>) -> Option<JsonNode> {
     let mut parser = JsonParser::new(tokens);
     parser.parse()
 }
