@@ -2,13 +2,14 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum JsonNode {
     Object(HashMap<String, JsonNode>),
     Array(Vec<JsonNode>),
     String(String),
     Number(f64),
     Boolean(bool),
+    #[default]
     Null,
 }
 
