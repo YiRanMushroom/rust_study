@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TestStruct {
     field1: i32,
@@ -92,14 +94,13 @@ pub fn main() {
     use yiran_json::FromAndToJson;
     let json_str = "{\"name\":\"Alice\",\"age\":30.,\"is_student\":1e-2,\"courses\":[{\"name\":\"Math\",\"credits\":3e3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null, \"message\":\"你好中国\"}";
 
-    let mut json = yiran_json::parse_json(json_str).unwrap();
+    let mut json1 = yiran_json::parse_json(json_str).unwrap();
 
-    json["name"] = "Bob".to_string().to_json();
-    json["courses"][0]["credits"].set_null();
-    json["additional"] = "This is an additional field".to_string().to_json();
+    json1["name"] = "Bob".to_string().to_json();
+    json1["courses"][0]["credits"] = 4.to_json();
+    json1["additional"] = "This is an additional field".to_string().to_json();
 
-    let json2 = yiran_json::parse_json(&json.dump(2)).unwrap();
+    let json2 = yiran_json::parse_json(&json1.dump(2)).unwrap();
+    assert_eq!(json2, json1);
     println!("{}", json2.dump(2));
-
-    assert_eq!(json2, json);
 }

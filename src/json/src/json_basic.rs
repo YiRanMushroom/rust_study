@@ -20,7 +20,7 @@ impl JsonNode {
 }
 
 impl Display for JsonNode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
             JsonNode::Object(obj) => {
                 write!(f, "{{")?;
@@ -61,7 +61,7 @@ impl Display for JsonNode {
     }
 }
 
-impl <'a> Index<&'a str> for JsonNode {
+impl<'a> Index<&'a str> for JsonNode {
     type Output = JsonNode;
 
     fn index(&self, index: &'a str) -> &Self::Output {
@@ -78,7 +78,7 @@ impl <'a> Index<&'a str> for JsonNode {
     }
 }
 
-impl <'a> IndexMut<&'a str> for JsonNode {
+impl<'a> IndexMut<&'a str> for JsonNode {
     fn index_mut(&mut self, index: &'a str) -> &mut Self {
         match self {
             JsonNode::Object(obj) => {
