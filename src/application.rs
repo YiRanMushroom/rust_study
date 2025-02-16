@@ -1,23 +1,20 @@
-use json;
-use json::FromAndToJson;
-
-#[derive(Debug, Clone, Default, json::JsonType, PartialEq)]
+#[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TestStruct {
     field1: i32,
     field2: f64,
     field3: String,
 }
 
-#[derive(Debug, Clone, Default, json::JsonType, PartialEq)]
+#[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TestStruct2 {
     field1: i32,
     field2: TestStruct,
 }
 
-#[derive(Debug, Clone, Default, json::JsonType, PartialEq)]
+#[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TpType(i32, i64, f64);
 
-#[derive(Debug, Clone, Default, json::JsonType, PartialEq)]
+#[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 enum TestEnum {
     #[default]
     Variant1,
@@ -32,6 +29,7 @@ enum TestEnum {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use yiran_json::*;
 
     #[test]
     fn test_tuple() {
@@ -90,7 +88,7 @@ mod tests {
     }
 }
 
-pub fn main() {
+/*pub fn main() {
     println!("Hello, world!");
 
     let json_str = "{\"name\":\"Alice\",\"age\":30.,\"is_student\":1e-2,\"courses\":[{\"name\":\"Math\",\"credits\":3e3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null, \"message\":\"你好中国\"}";
@@ -127,4 +125,4 @@ pub fn main() {
     for (idx, v) in json.obj_iter().unwrap().enumerate() {
         println!("[{}]: <\"{}\": {}>", idx, v.0, v.1);
     }
-}
+}*/

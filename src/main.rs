@@ -1,5 +1,5 @@
 mod application;
 
 fn main() {
-    application::main();
+    // application::main();
 }

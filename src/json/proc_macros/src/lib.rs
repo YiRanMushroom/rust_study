@@ -1,10 +1,24 @@
-use proc_macro::TokenStream;
+// use proc_macro::{TokenStream};
+use proc_macro2::Span;
+use proc_macro_crate::{crate_name, FoundCrate};
 use quote::{format_ident, quote};
-use syn::punctuated::Pair::Punctuated;
-use syn::LitInt;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{Ident, LitInt};
 
-fn json_struct(input: DeriveInput) -> TokenStream {
+fn get_json_crate_name() -> proc_macro2::TokenStream {
+    proc_macro2::TokenStream::from(
+        match crate_name("json").expect("json must be present in Cargo.toml") {
+            FoundCrate::Itself => quote!(json),
+            FoundCrate::Name(name) => {
+                let ident = Ident::new(&name, Span::call_site());
+                quote! {#ident}
+            }
+        },
+    )
+}
+
+fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
+    let crate_name = get_json_crate_name();
     let name = &input.ident;
     let fields = if let Data::Struct(data_struct) = &input.data {
         if let Fields::Named(fields_named) = &data_struct.fields {
@@ -19,8 +33,7 @@ fn json_struct(input: DeriveInput) -> TokenStream {
     let to_json_fields = fields.iter().map(|field| {
         let field_name = &field.ident;
         quote! {
-            let #field_name = self.#field_name.to_json();
-            json[stringify!(#field_name).to_string()] = #field_name;
+            json[stringify!(#field_name).to_string()] = self.#field_name.to_json();
         }
     });
 
@@ -32,25 +45,25 @@ fn json_struct(input: DeriveInput) -> TokenStream {
         }
     });
 
-    let expanded = quote! {
-
-        impl json::FromAndToJson for #name {
-            fn to_json(&self) -> json::JsonNode {
-                let mut json = json::JsonNode::Object(std::collections::HashMap::new());
+    let expanded: proc_macro2::TokenStream = quote! {
+        impl #crate_name::FromAndToJson for #name {
+            fn to_json(&self) -> #crate_name::JsonNode {
+                let mut json = #crate_name::JsonNode::Object(std::collections::HashMap::new());
                 #(#to_json_fields)*
                 json
             }
 
-            fn from_json(json: &json::JsonNode) -> Self {
+            fn from_json(json: &#crate_name::JsonNode) -> Self {
                 Self{#(#from_json_fields)*}
             }
         }
     };
 
-    TokenStream::from(expanded)
+    proc_macro2::TokenStream::from(expanded)
 }
 
-fn json_tuple(input: DeriveInput) -> TokenStream {
+fn json_tuple(input: DeriveInput) -> proc_macro2::TokenStream {
+    let crate_name = get_json_crate_name();
     let name = &input.ident;
     let fields = if let Data::Struct(data_struct) = &input.data {
         if let Fields::Unnamed(fields_unnamed) = &data_struct.fields {
@@ -62,11 +75,10 @@ fn json_tuple(input: DeriveInput) -> TokenStream {
         unimplemented!()
     };
 
-    let to_json_fields = fields.iter().enumerate().map(|(idx, field)| {
+    let to_json_fields = fields.iter().enumerate().map(|(idx, _)| {
         let idx_lit = LitInt::new(&idx.to_string(), proc_macro2::Span::call_site());
         quote! {
             json.push(self.#idx_lit.to_json());
-
         }
     });
 
@@ -75,76 +87,31 @@ fn json_tuple(input: DeriveInput) -> TokenStream {
         let idx_lit = LitInt::new(&idx.to_string(), proc_macro2::Span::call_site());
         quote! {
             #idx_lit : #field_type::from_json(&json[#idx_lit]),
-
         }
     });
 
     let fields_len = fields.len();
 
     let expanded = quote! {
-
-        impl json::FromAndToJson for #name {
-            fn to_json(&self) -> json::JsonNode {
-                let mut json = json::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
+        impl #crate_name::FromAndToJson for #name {
+            fn to_json(&self) -> #crate_name::JsonNode {
+                let mut json = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                 #(#to_json_fields)*
                 json
             }
 
-            fn from_json(json: &json::JsonNode) -> Self {
+            fn from_json(json: &#crate_name::JsonNode) -> Self {
                 Self{#(#from_json_fields)*}
             }
         }
 
     };
 
-    TokenStream::from(expanded)
+    proc_macro2::TokenStream::from(expanded)
 }
 
-/*
-enum TestEnum {
-    Variant1(String),
-    Variant2,
-    Variant3(i32, f64),
-}
-
-impl FromAndToJson for TestEnum {
-    fn from_json(json: &json::JsonNode) -> Self {
-        match &json["type".to_string()] {
-            json::JsonNode::String(s) => match s.as_str() {
-                "Variant1" => TestEnum::Variant1(String::from_json(&json["v".to_string()])),
-                "Variant2" => TestEnum::Variant2,
-                "Variant3" => TestEnum::Variant3(
-                    i32::from_json(&json["v".to_string()][0]),
-                    f64::from_json(&json["v".to_string()][1]),
-                ),
-                _ => panic!("Invalid variant"),
-            },
-            _ => panic!("Invalid variant"),
-        }
-    }
-
-    fn to_json(&self) -> json::JsonNode {
-        let mut json = json::JsonNode::Object(std::collections::HashMap::new());
-        match self {
-            TestEnum::Variant1(p0) => {
-                json["type".to_string()] = json::JsonNode::String("Variant1".to_string());
-                json["v".to_string()] = p0.to_json();
-            }
-            TestEnum::Variant2 => {
-                json["type".to_string()] = json::JsonNode::String("Variant2".to_string());
-            }
-            TestEnum::Variant3(v0, v1) => {
-                json["type".to_string()] = json::JsonNode::String("Variant3".to_string());
-                json["v".to_string()][0] = v0.to_json();
-                json["v".to_string()][1] = v1.to_json();
-            }
-        }
-        json
-    }
-}
-*/
-
-fn json_enum(input: DeriveInput) -> TokenStream {
+fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
+    let crate_name = get_json_crate_name();
     let name = &input.ident;
     let variants = if let Data::Enum(data_enum) = &input.data {
         &data_enum.variants
@@ -207,23 +174,10 @@ fn json_enum(input: DeriveInput) -> TokenStream {
         } else if let Fields::Unit = &variant.fields {
             return quote! {
                 #name::#variant_name => {
-                    json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
+                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                 }
             };
         } else if let Fields::Named(fields_named) = &variant.fields {
-            // let named_fields_init_quotes = fields_named.named.iter().map(|field| {
-            //     let field_name = field.ident.as_ref().unwrap();
-            //     quote! {
-            //         json["value".to_string()][stringify!(#field_name).to_string()] = #field_name.to_json();
-            //     }
-            // });
-            // quote! {
-            //     #name::#variant_name(#(#idx_tokens)*) => {
-            //         json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
-            //         json["value".to_string()] = json::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
-            //         #(#field_init_quotes)*
-            //     }
-            // }
             let quote_identifiers = fields_named.named.iter().map(|field| {
                 field.ident.as_ref().unwrap()
             });
@@ -235,8 +189,8 @@ fn json_enum(input: DeriveInput) -> TokenStream {
             });
             return quote! {
                 #name::#variant_name{#(#quote_identifiers),*} => {
-                    json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
-                    json["value".to_string()] = json::JsonNode::Object(std::collections::HashMap::new());
+                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["value".to_string()] = #crate_name::JsonNode::Object(std::collections::HashMap::new());
                     #(#field_init_quotes)*
                 }
             };
@@ -246,31 +200,24 @@ fn json_enum(input: DeriveInput) -> TokenStream {
         if fields.len() == 0 {
             quote! {
                 #name::#variant_name => {
-                    json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
+                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                 }
             }
         } else if fields.len() == 1 {
             quote! {
                 #name::#variant_name(p) => {
-                    json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
+                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                     json["value".to_string()] = p.to_json();
                 }
             }
         } else {
             let idx_tokens = fields.iter().enumerate().map(|(idx, _)| {
-                LitInt::new(&idx.to_string(), proc_macro2::Span::call_site());
                 let var_name = format_ident!("v{}", idx);
-                if idx == fields.len() - 1 {
-                    quote! {
-                        #var_name
-                    }
-                } else {
-                    quote! {
-                        #var_name,
-                    }
+                quote! {
+                    #var_name,
                 }
             });
-            let field_init_quotes = fields.iter().enumerate().map(|(idx, field)| {
+            let field_init_quotes = fields.iter().enumerate().map(|(idx, _)| {
                 let var_name = format_ident!("v{}", idx);
                 quote! {
                     json["value".to_string()].push(#var_name.to_json());
@@ -281,8 +228,8 @@ fn json_enum(input: DeriveInput) -> TokenStream {
 
             quote! {
                 #name::#variant_name(#(#idx_tokens)*) => {
-                    json["type".to_string()] = json::JsonNode::String(#variant_name_str.to_string());
-                    json["value".to_string()] = json::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
+                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["value".to_string()] = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                     #(#field_init_quotes)*
                 }
             }
@@ -290,10 +237,10 @@ fn json_enum(input: DeriveInput) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl json::FromAndToJson for #name {
-            fn from_json(json: &json::JsonNode) -> Self {
+        impl #crate_name::FromAndToJson for #name {
+            fn from_json(json: &#crate_name::JsonNode) -> Self {
                 match &json["type".to_string()] {
-                    json::JsonNode::String(s) => match s.as_str() {
+                    #crate_name::JsonNode::String(s) => match s.as_str() {
                         #(#from_json_variants)*
                         _ => panic!("Invalid variant"),
                     },
@@ -301,8 +248,8 @@ fn json_enum(input: DeriveInput) -> TokenStream {
                 }
             }
 
-            fn to_json(&self) -> json::JsonNode {
-                let mut json = json::JsonNode::Object(std::collections::HashMap::new());
+            fn to_json(&self) -> #crate_name::JsonNode {
+                let mut json = #crate_name::JsonNode::Object(std::collections::HashMap::new());
                 match self {
                     #(#to_json_variants)*
                 }
@@ -311,18 +258,17 @@ fn json_enum(input: DeriveInput) -> TokenStream {
         }
     };
 
-    TokenStream::from(expanded)
+    proc_macro2::TokenStream::from(expanded)
 }
 
 #[proc_macro_derive(JsonType)]
-pub fn json_type(item: TokenStream) -> TokenStream {
+pub fn json_type(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
-    let name = &input.ident;
     if let Data::Struct(_) = &input.data {
-        return json_struct(input);
+        proc_macro::TokenStream::from(json_struct(input))
     } else if let Data::Enum(_) = &input.data {
-        return json_enum(input);
+        proc_macro::TokenStream::from(json_enum(input))
     } else {
-        panic!("Only struct and enum are supported");
+        panic!("Unions are unsafe, please use enum instead")
     }
 }

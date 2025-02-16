@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 # add macros as a dependency
 static_assertions = "1.1.0"
-json = { path = "src/json" }
+yiran_json = { path = "src/json" , package = "json" }
