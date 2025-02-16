@@ -1,5 +1,3 @@
-use yiran_json::FromAndToJson;
-
 #[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TestStruct {
     field1: i32,
@@ -91,12 +89,14 @@ mod tests {
 }
 
 pub fn main() {
+    use yiran_json::FromAndToJson;
     let json_str = "{\"name\":\"Alice\",\"age\":30.,\"is_student\":1e-2,\"courses\":[{\"name\":\"Math\",\"credits\":3e3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null, \"message\":\"你好中国\"}";
 
     let mut json = yiran_json::parse_json(json_str).unwrap();
 
-    json["name".to_string()] = yiran_json::JsonNode::String("Bob".to_string());
-    json["courses".to_string()][0]["credits".to_string()] = yiran_json::JsonNode::Null;
+    json["name"] = "Bob".to_string().to_json();
+    json["courses"][0]["credits"].set_null();
+    json["additional"] = "This is an additional field".to_string().to_json();
 
     let json2 = yiran_json::parse_json(&json.dump(2)).unwrap();
     println!("{}", json2.dump(2));

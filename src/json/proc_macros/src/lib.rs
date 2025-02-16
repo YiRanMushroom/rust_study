@@ -33,7 +33,7 @@ fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
     let to_json_fields = fields.iter().map(|field| {
         let field_name = &field.ident;
         quote! {
-            json[stringify!(#field_name).to_string()] = self.#field_name.to_json();
+            json[stringify!(#field_name)] = self.#field_name.to_json();
         }
     });
 
@@ -41,7 +41,7 @@ fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
         let field_name = &field.ident;
         let field_type = &field.ty;
         quote! {
-            #field_name: #field_type::from_json(&json[stringify!(#field_name).to_string()]),
+            #field_name: #field_type::from_json(&json[stringify!(#field_name)]),
         }
     });
 
@@ -133,7 +133,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
                 let field_name = field.ident.as_ref().unwrap();
                 let field_type = &field.ty;
                 quote! {
-                    #field_name: #field_type::from_json(&json["value".to_string()][stringify!(#field_name).to_string()]),
+                    #field_name: #field_type::from_json(&json["value"][stringify!(#field_name)]),
                 }
             });
             return quote! {
@@ -150,14 +150,14 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
             let field = &fields[0];
             let field_type = &field.ty;
             quote! {
-                #variant_name_str => #name::#variant_name(#field_type::from_json(&json["value".to_string()])),
+                #variant_name_str => #name::#variant_name(#field_type::from_json(&json["value"])),
             }
         } else {
             let field_init_quotes = fields.iter().enumerate().map(|(idx, field)| {
                 let field_type = &field.ty;
                 let idx_lit = LitInt::new(&idx.to_string(), proc_macro2::Span::call_site());
                 quote! {
-                    #field_type::from_json(&json["value".to_string()][#idx_lit]),
+                    #field_type::from_json(&json["value"][#idx_lit]),
                 }
             });
             quote! {
@@ -174,7 +174,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
         } else if let Fields::Unit = &variant.fields {
             return quote! {
                 #name::#variant_name => {
-                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                 }
             };
         } else if let Fields::Named(fields_named) = &variant.fields {
@@ -184,13 +184,13 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
             let field_init_quotes = fields_named.named.iter().map(|field| {
                 let field_name = field.ident.as_ref().unwrap();
                 quote! {
-                    json["value".to_string()][stringify!(#field_name).to_string()] = #field_name.to_json();
+                    json["value"][stringify!(#field_name)] = #field_name.to_json();
                 }
             });
             return quote! {
                 #name::#variant_name{#(#quote_identifiers),*} => {
-                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
-                    json["value".to_string()] = #crate_name::JsonNode::Object(std::collections::HashMap::new());
+                    json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["value"] = #crate_name::JsonNode::Object(std::collections::HashMap::new());
                     #(#field_init_quotes)*
                 }
             };
@@ -200,14 +200,14 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
         if fields.len() == 0 {
             quote! {
                 #name::#variant_name => {
-                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                 }
             }
         } else if fields.len() == 1 {
             quote! {
                 #name::#variant_name(p) => {
-                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
-                    json["value".to_string()] = p.to_json();
+                    json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["value"] = p.to_json();
                 }
             }
         } else {
@@ -220,7 +220,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
             let field_init_quotes = fields.iter().enumerate().map(|(idx, _)| {
                 let var_name = format_ident!("v{}", idx);
                 quote! {
-                    json["value".to_string()].push(#var_name.to_json());
+                    json["value"].push(#var_name.to_json());
                 }
             });
 
@@ -228,8 +228,8 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
 
             quote! {
                 #name::#variant_name(#(#idx_tokens)*) => {
-                    json["type".to_string()] = #crate_name::JsonNode::String(#variant_name_str.to_string());
-                    json["value".to_string()] = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
+                    json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
+                    json["value"] = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                     #(#field_init_quotes)*
                 }
             }
@@ -239,7 +239,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
     let expanded = quote! {
         impl #crate_name::FromAndToJson for #name {
             fn from_json(json: &#crate_name::JsonNode) -> Self {
-                match &json["type".to_string()] {
+                match &json["type"] {
                     #crate_name::JsonNode::String(s) => match s.as_str() {
                         #(#from_json_variants)*
                         _ => panic!("Invalid variant"),

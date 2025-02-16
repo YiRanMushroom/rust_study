@@ -61,14 +61,14 @@ impl Display for JsonNode {
     }
 }
 
-impl Index<String> for JsonNode {
+impl <'a> Index<&'a str> for JsonNode {
     type Output = JsonNode;
 
-    fn index(&self, index: String) -> &Self::Output {
+    fn index(&self, index: &'a str) -> &Self::Output {
         match self {
             JsonNode::Object(obj) => {
-                if obj.contains_key(&index) {
-                    obj.get(&index).unwrap()
+                if obj.contains_key(index) {
+                    obj.get(index).unwrap()
                 } else {
                     panic!("Key not found")
                 }
@@ -78,15 +78,15 @@ impl Index<String> for JsonNode {
     }
 }
 
-impl IndexMut<String> for JsonNode {
-    fn index_mut(&mut self, index: String) -> &mut Self {
+impl <'a> IndexMut<&'a str> for JsonNode {
+    fn index_mut(&mut self, index: &'a str) -> &mut Self {
         match self {
             JsonNode::Object(obj) => {
-                if obj.contains_key(&index) {
-                    obj.get_mut(&index).unwrap()
+                if obj.contains_key(index) {
+                    obj.get_mut(index).unwrap()
                 } else {
                     obj.insert(index.to_string(), JsonNode::Null);
-                    obj.get_mut(&index).unwrap()
+                    obj.get_mut(index).unwrap()
                 }
             }
             _ => panic!("Cannot index non-object type"),
@@ -392,6 +392,10 @@ impl JsonNode {
             JsonNode::Object(obj) => obj.contains_key(key),
             _ => panic!("Cannot check key in non-object type"),
         }
+    }
+
+    pub fn set_null(&mut self) {
+        *self = JsonNode::Null;
     }
 }
 
