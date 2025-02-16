@@ -3,20 +3,6 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 #[derive(Debug, Clone)]
-pub enum JsonToken {
-    String(String),
-    Number(f64),
-    Boolean(bool),
-    Null,
-    Comma,
-    Colon,
-    LeftBrace,
-    RightBrace,
-    LeftBracket,
-    RightBracket,
-}
-
-#[derive(Debug, Clone)]
 pub enum JsonNode {
     Object(HashMap<String, JsonNode>),
     Array(Vec<JsonNode>),
@@ -244,27 +230,6 @@ impl FromAndToJson for f64 {
     }
 }
 
-macro_rules! impl_from_and_to_json_for_number {
-    ($($t:ty),*) => {
-        $(
-            impl FromAndToJson for $t {
-                fn from_json(json: &JsonNode) -> Self {
-                    match json {
-                        JsonNode::Number(n) => n.clone() as $t,
-                        _ => panic!("Cannot convert non-number type to number"),
-                    }
-                }
-
-                fn to_json(&self) -> JsonNode {
-                    JsonNode::Number(self.clone() as f64)
-                }
-            }
-        )*
-    };
-}
-
-impl_from_and_to_json_for_number!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize);
-
 // impl new trait for JsonNode
 impl JsonNode {
     pub fn new() -> JsonNode {
@@ -464,19 +429,38 @@ impl JsonNode {
 
     pub fn remove(&mut self, key: &str) -> Option<JsonNode> {
         match self {
-            JsonNode::Object(obj) => {
-                obj.remove(key)
-            }
+            JsonNode::Object(obj) => obj.remove(key),
             _ => panic!("Cannot remove from non-object type"),
         }
     }
 
     pub fn contains_key(&self, key: &str) -> bool {
         match self {
-            JsonNode::Object(obj) => {
-                obj.contains_key(key)
-            }
+            JsonNode::Object(obj) => obj.contains_key(key),
             _ => panic!("Cannot check key in non-object type"),
         }
     }
 }
+
+macro_rules! impl_from_and_to_json_for_number {
+    ($($t:ty),*) => {
+        $(
+            impl FromAndToJson for $t {
+                fn from_json(json: &JsonNode) -> Self {
+                    match json {
+                        JsonNode::Number(n) => n.clone() as $t,
+                        _ => panic!("Cannot convert non-number type to number"),
+                    }
+                }
+
+                fn to_json(&self) -> JsonNode {
+                    JsonNode::Number(self.clone() as f64)
+                }
+            }
+        )*
+    };
+}
+
+impl_from_and_to_json_for_number!(
+    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32
+);

@@ -1,4 +1,4 @@
-use crate::json_basic::*;
+use crate::json_impl::JsonToken;
 use std::collections::LinkedList;
 
 pub struct JsonLexer<'a> {
@@ -216,14 +216,14 @@ impl<'a> JsonLexer<'a> {
     }
 }
 
-pub fn parse_all(input: &str) -> (LinkedList<JsonToken>, bool) {
+pub fn parse_all(input: &str) -> Option<LinkedList<JsonToken>> {
     let mut lexer = JsonLexer::new(input);
     let mut tokens = LinkedList::new();
 
     loop {
         match lexer.next_token() {
             Some(token) => tokens.push_back(token),
-            None => break (tokens, true),
+            None => break Some(tokens),
         }
     }
 }
