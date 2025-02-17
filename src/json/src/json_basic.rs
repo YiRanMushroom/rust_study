@@ -26,7 +26,7 @@ impl Display for JsonNode {
                 write!(f, "{{")?;
                 for (idx, (k, v)) in obj.iter().enumerate() {
                     write!(f, "\"{}\": ", k)?;
-                    (*v).fmt(f)?;
+                    v.fmt(f)?;
                     if idx != obj.len() - 1 {
                         write!(f, ", ")?;
                     }
@@ -36,7 +36,7 @@ impl Display for JsonNode {
             JsonNode::Array(arr) => {
                 write!(f, "[")?;
                 for (idx, v) in arr.iter().enumerate() {
-                    (*v).fmt(f)?;
+                    v.fmt(f)?;
                     if idx != arr.len() - 1 {
                         write!(f, ", ")?;
                     }
@@ -417,6 +417,12 @@ macro_rules! impl_from_and_to_json_for_number {
         )*
     };
 }
+
+/*
+    (pattern) => {
+
+    };
+*/
 
 impl_from_and_to_json_for_number!(
     i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32

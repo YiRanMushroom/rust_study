@@ -32,45 +32,42 @@ impl<'a> JsonLexer<'a> {
         }
     }
 
-    fn handle_char(&mut self, c: char) -> Option<JsonToken> {
-        loop {
-            match c {
-                '"' => break self.handle_string(),
-                '0'..='9' | 'e' | 'E' | '.' | '+' | '-' => break self.handle_number(c),
-                't' | 'f' => break self.handle_boolean(c),
-                'n' => break self.handle_null(),
-                ',' => {
-                    self.move_to_next(',');
-                    break Some(JsonToken::Comma);
-                }
-                ':' => {
-                    self.move_to_next(':');
-                    break Some(JsonToken::Colon);
-                }
-                '{' => {
-                    self.move_to_next('{');
-                    break Some(JsonToken::LeftBrace);
-                }
-                '}' => {
-                    self.move_to_next('}');
-                    break Some(JsonToken::RightBrace);
-                }
-                '[' => {
-                    self.move_to_next('[');
-                    break Some(JsonToken::LeftBracket);
-                }
-                ']' => {
-                    self.move_to_next(']');
-                    break Some(JsonToken::RightBracket);
-                }
-                _ => {
-                    self.move_to_next(c);
-                    if c.is_whitespace() {
-                        break None;
-                    } else {
-                        continue;
-                    }
-                }
+    fn handle_char(&mut self, mut c: char) -> Option<JsonToken> {
+        while c.is_whitespace() {
+            self.move_to_next(c);
+            c = self.peek_char()?;
+        }
+        match c {
+            '"' => self.handle_string(),
+            '0'..='9' | 'e' | 'E' | '.' | '+' | '-' => self.handle_number(),
+            't' | 'f' => self.handle_boolean(),
+            'n' => self.handle_null(),
+            ',' => {
+                self.move_to_next(',');
+                Some(JsonToken::Comma)
+            }
+            ':' => {
+                self.move_to_next(':');
+                Some(JsonToken::Colon)
+            }
+            '{' => {
+                self.move_to_next('{');
+                Some(JsonToken::LeftBrace)
+            }
+            '}' => {
+                self.move_to_next('}');
+                Some(JsonToken::RightBrace)
+            }
+            '[' => {
+                self.move_to_next('[');
+                Some(JsonToken::LeftBracket)
+            }
+            ']' => {
+                self.move_to_next(']');
+                Some(JsonToken::RightBracket)
+            }
+            _ => {
+                panic!("Unexpected character: {}", c);
             }
         }
     }
@@ -117,7 +114,7 @@ impl<'a> JsonLexer<'a> {
                 for _ in 0..4 {
                     match self.peek_char() {
                         Some(c) if c.is_digit(16) => {
-                            codepoint = codepoint * 16 + c.to_digit(16).unwrap();
+                            codepoint = codepoint * 16 + c.to_digit(16)?;
                             self.move_to_next(c);
                         }
                         _ => return None,
@@ -163,8 +160,9 @@ impl<'a> JsonLexer<'a> {
         }
     }
 
-    fn handle_number(&mut self, c: char) -> Option<JsonToken> {
+    fn handle_number(&mut self) -> Option<JsonToken> {
         let mut number = String::new();
+        let c = self.peek_char()?;
         number.push(c);
         self.move_to_next(c);
 
@@ -177,14 +175,15 @@ impl<'a> JsonLexer<'a> {
             }
         }
 
-        match number.parse() {
+        match number.parse::<f64>() {
             Ok(n) => Some(JsonToken::Number(n)),
             Err(_) => None,
         }
     }
 
-    fn handle_boolean(&mut self, c: char) -> Option<JsonToken> {
+    fn handle_boolean(&mut self) -> Option<JsonToken> {
         let mut boolean = String::new();
+        let c = self.peek_char()?;
         boolean.push(c);
         self.move_to_next(c);
 

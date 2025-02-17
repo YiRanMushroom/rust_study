@@ -104,6 +104,7 @@ fn translate_escape(s: &str) -> String {
             '\t' => result.push_str("\\t"),
             '\u{8}' => result.push_str("\\b"),
             '\u{c}' => result.push_str("\\f"),
+            '/' => result.push_str("\\/"),
             utf_char if !utf_char.is_ascii() => {
                 result.push_str(&format!("\\u{:04x}", utf_char as u32));
             }

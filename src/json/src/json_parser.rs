@@ -12,12 +12,7 @@ impl JsonParser {
     }
 
     pub fn parse(&mut self) -> Option<JsonNode> {
-        let root = self.parse_value();
-        match root {
-            Some(JsonNode::Object(obj)) => Some(JsonNode::Object(obj)),
-            Some(JsonNode::Array(arr)) => Some(JsonNode::Array(arr)),
-            _ => None,
-        }
+        self.parse_value()
     }
 
     pub fn parse_value(&mut self) -> Option<JsonNode> {
@@ -39,17 +34,15 @@ impl JsonParser {
             match self.tokens.pop_front() {
                 Some(JsonToken::RightBrace) => break Some(JsonNode::Object(obj)),
                 Some(JsonToken::String(key)) => match self.tokens.pop_front() {
-                    Some(JsonToken::Colon) => match self.parse_value() {
-                        None => break None,
-                        Some(value) => {
-                            obj.insert(key, value);
-                            match self.tokens.pop_front() {
-                                Some(JsonToken::Comma) => continue,
-                                Some(JsonToken::RightBrace) => break Some(JsonNode::Object(obj)),
-                                _ => break None,
-                            }
+                    Some(JsonToken::Colon) => {
+                        let value = self.parse_value()?;
+                        obj.insert(key, value);
+                        match self.tokens.pop_front() {
+                            Some(JsonToken::Comma) => continue,
+                            Some(JsonToken::RightBrace) => break Some(JsonNode::Object(obj)),
+                            _ => break None,
                         }
-                    },
+                    }
                     _ => break None,
                 },
                 _ => break None,
@@ -61,15 +54,17 @@ impl JsonParser {
         let mut arr = Vec::new();
 
         loop {
-            match self.tokens.pop_front() {
-                Some(JsonToken::RightBracket) => break Some(JsonNode::Array(arr)),
-                Some(JsonToken::Comma) => continue,
-                Some(token) => {
-                    self.tokens.push_front(token);
-                    match self.parse_value() {
-                        Some(value) => arr.push(value),
-                        None => break None,
-                    }
+            match self.tokens.front() {
+                Some(JsonToken::RightBracket) => {
+                    self.tokens.pop_front();
+                    break Some(JsonNode::Array(arr))
+                },
+                Some(JsonToken::Comma) => {
+                    self.tokens.pop_front();
+                    continue
+                }
+                Some(_) => {
+                    arr.push(self.parse_value()?);
                 }
                 None => break None,
             }

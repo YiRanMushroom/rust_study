@@ -105,7 +105,7 @@ pub fn main() {
         JsonNode::String("我很喜欢冰淇淋。".to_string()),
     ]);
 
-    let json2 = parse_json(&json1.dump(2, false)).unwrap();
+    let mut json2 = parse_json(&json1.dump(2, true)).unwrap();
     assert_eq!(json2, json1);
     println!("{}", json2.dump(2, false));
 }
