@@ -143,7 +143,16 @@ impl<'a> JsonLexer<'a> {
                 }
                 Some('\\') => match self.handle_escape() {
                     Some(c) => string.push(c),
-                    None => return None,
+                    None => {
+                        string.push('\\');
+                        let next = self.peek_char();
+                        if let Some(c) = next {
+                            string.push(c);
+                            self.move_to_next(c);
+                        } else {
+                            break None;
+                        }
+                    }
                 },
                 Some(c) => {
                     string.push(c);

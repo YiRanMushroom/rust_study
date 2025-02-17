@@ -13,10 +13,7 @@ pub fn parse_json(input: &str) -> Option<JsonNode> {
 }
 
 impl JsonNode {
-    pub fn dump(&self, indent: usize) -> String {
-        if indent == 0 {
-            return format!("{}", self);
-        }
-        json_dumper::dump_json_node(&self, indent)
+    pub fn dump(&self, indent: usize, escape_string : bool) -> String {
+        json_dumper::dump_json_node(&self, indent, escape_string)
     }
 }

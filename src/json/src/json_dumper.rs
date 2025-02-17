@@ -4,13 +4,15 @@ struct JsonDumper {
     current_indent: usize,
     indent_size: usize,
     result: String,
+    escape_string: bool,
 }
 
-pub fn dump_json_node(json: &JsonNode, indent: usize) -> String {
+pub fn dump_json_node(json: &JsonNode, indent: usize, escape_string: bool) -> String {
     let mut dumper = JsonDumper {
         current_indent: 0,
         indent_size: indent,
         result: String::new(),
+        escape_string,
     };
     dumper.process(json);
     dumper.result
@@ -71,7 +73,11 @@ impl JsonDumper {
             }
             JsonNode::String(s) => {
                 self.result.push('"');
-                self.result.push_str(s);
+                if self.escape_string {
+                    self.result.push_str(&translate_escape(s));
+                } else {
+                    self.result.push_str(s);
+                }
                 self.result.push('"');
             }
             JsonNode::Number(n) => {
@@ -85,4 +91,24 @@ impl JsonDumper {
             }
         }
     }
+}
+
+fn translate_escape(s: &str) -> String {
+    let mut result = String::new();
+    for c in s.chars() {
+        match c {
+            '"' => result.push_str("\\\""),
+            '\\' => result.push_str("\\\\"),
+            '\n' => result.push_str("\\n"),
+            '\r' => result.push_str("\\r"),
+            '\t' => result.push_str("\\t"),
+            '\u{8}' => result.push_str("\\b"),
+            '\u{c}' => result.push_str("\\f"),
+            utf_char if !utf_char.is_ascii() => {
+                result.push_str(&format!("\\u{:04x}", utf_char as u32));
+            }
+            _ => result.push(c),
+        }
+    }
+    result
 }

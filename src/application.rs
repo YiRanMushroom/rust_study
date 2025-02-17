@@ -100,7 +100,7 @@ pub fn main() {
     json1["courses"][0]["credits"] = 4.to_json();
     json1["additional"] = "This is an additional field".to_string().to_json();
 
-    let json2 = yiran_json::parse_json(&json1.dump(2)).unwrap();
+    let json2 = yiran_json::parse_json(&json1.dump(2, false)).unwrap();
     assert_eq!(json2, json1);
-    println!("{}", json2.dump(2));
+    println!("{}", json2.dump(2, false));
 }
