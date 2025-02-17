@@ -1,4 +1,4 @@
-use yiran_json::{parse_json, JsonNode};
+use yiran_json::{parse_json, FromAndToJson, JsonNode};
 
 #[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TestStruct {
@@ -19,7 +19,8 @@ struct TpType(i32, i64, f64);
 #[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 enum TestEnum {
     #[default]
-    Variant1,
+    Variant0,
+    Variant1(),
     Variant2(String),
     Variant3(i32, f64),
     Variant4 {
@@ -43,7 +44,8 @@ mod tests {
 
     #[test]
     fn test_enum() {
-        let first_variant = TestEnum::Variant1;
+        use yiran_json::*;
+        let first_variant = TestEnum::Variant1();
         let first_variant_json = first_variant.to_json();
         let another_first_variant = TestEnum::from_json(&first_variant_json);
         assert_eq!(first_variant, another_first_variant);

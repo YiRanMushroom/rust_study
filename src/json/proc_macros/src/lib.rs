@@ -1,4 +1,3 @@
-// use proc_macro::{TokenStream};
 use proc_macro2::Span;
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::{format_ident, quote};
@@ -122,46 +121,48 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
     let from_json_variants = variants.iter().map(|variant| {
         let variant_name = &variant.ident;
         let variant_name_str = variant_name.to_string();
+
         let fields = if let Fields::Unnamed(fields_unnamed) = &variant.fields {
             &fields_unnamed.unnamed
         } else if let Fields::Unit = &variant.fields {
             return quote! {
-                #variant_name_str => #name::#variant_name,
+                #variant_name_str => {#name::#variant_name}
             };
         } else if let Fields::Named(fields_named) = &variant.fields {
             let named_fields_init_quotes = fields_named.named.iter().map(|field| {
                 let field_name = field.ident.as_ref().unwrap();
                 let field_type = &field.ty;
                 quote! {
-                    #field_name: #field_type::from_json(&json["value"][stringify!(#field_name)]),
+                    #field_name: #field_type::from_json(&json["value"][stringify!(#field_name)])
                 }
             });
             return quote! {
-                #variant_name_str => #name::#variant_name{#(#named_fields_init_quotes)*},
+                #variant_name_str => {#name::#variant_name{#(#named_fields_init_quotes),*}}
             };
         } else {
             panic!("Not supported because it is not unit, named or unnamed fields");
         };
+
         if fields.len() == 0 {
             quote! {
-                #variant_name_str => #name::#variant_name,
+                #variant_name_str => {#name::#variant_name()}
             }
         } else if fields.len() == 1 {
             let field = &fields[0];
             let field_type = &field.ty;
             quote! {
-                #variant_name_str => #name::#variant_name(#field_type::from_json(&json["value"])),
+                #variant_name_str => {#name::#variant_name(#field_type::from_json(&json["value"]))}
             }
         } else {
             let field_init_quotes = fields.iter().enumerate().map(|(idx, field)| {
                 let field_type = &field.ty;
                 let idx_lit = LitInt::new(&idx.to_string(), proc_macro2::Span::call_site());
                 quote! {
-                    #field_type::from_json(&json["value"][#idx_lit]),
+                    #field_type::from_json(&json["value"][#idx_lit])
                 }
             });
             quote! {
-                #variant_name_str => #name::#variant_name(#(#field_init_quotes)*),
+                #variant_name_str => {#name::#variant_name(#(#field_init_quotes),*)}
             }
         }
     });
@@ -197,24 +198,25 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
         }  else {
             panic!("Only unit and unnamed fields are supported");
         };
+
         if fields.len() == 0 {
             quote! {
-                #name::#variant_name => {
+                #name::#variant_name() => {
                     json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                 }
             }
         } else if fields.len() == 1 {
             quote! {
-                #name::#variant_name(p) => {
+                #name::#variant_name(v) => {
                     json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
-                    json["value"] = p.to_json();
+                    json["value"] = v.to_json();
                 }
             }
         } else {
             let idx_tokens = fields.iter().enumerate().map(|(idx, _)| {
                 let var_name = format_ident!("v{}", idx);
                 quote! {
-                    #var_name,
+                    #var_name
                 }
             });
             let field_init_quotes = fields.iter().enumerate().map(|(idx, _)| {
@@ -227,7 +229,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
             let fields_len = fields.len();
 
             quote! {
-                #name::#variant_name(#(#idx_tokens)*) => {
+                #name::#variant_name(#(#idx_tokens), *) => {
                     json["type"] = #crate_name::JsonNode::String(#variant_name_str.to_string());
                     json["value"] = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                     #(#field_init_quotes)*
@@ -242,9 +244,9 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
                 match &json["type"] {
                     #crate_name::JsonNode::String(s) => match s.as_str() {
                         #(#from_json_variants)*
-                        _ => panic!("Invalid variant"),
-                    },
-                    _ => panic!("Invalid variant"),
+                        _ => panic!("Invalid variant")
+                    }
+                    _ => panic!("Invalid variant")
                 }
             }
 
