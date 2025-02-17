@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use yiran_json::{parse_json, JsonNode};
 
 #[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
 struct TestStruct {
@@ -91,16 +91,21 @@ mod tests {
 }
 
 pub fn main() {
-    use yiran_json::FromAndToJson;
-    let json_str = "{\"name\":\"Alice\",\"age\":30.,\"is_student\":1e-2,\"courses\":[{\"name\":\"Math\",\"credits\":3e3},{\"name\":\"Science\",\"credits\":4},{\"name\":\"History\",\"credits\":2}],\"address\":{\"street\":\"123 Main St\",\"city\":\"Wonderland\",\"postal_code\":\"12345\"},\"friends\":[{\"name\":\"Bob\",\"age\":28},{\"name\":\"Charlie\",\"age\":35}],\"graduated\":null, \"message\":\"你好中国\"}";
+    use yiran_json::*;
+    let json_str = "{\"first name\":\"Yiran\", \"last name\": \"王\", \"age\":20,\"is_student\":true,\"courses\":[{\"name\":\"CPEN 212\",\"credits\":4},{\"name\":\"CPSC 221\",\"credits\":4},{\"name\":\"Math 256\",\"credits\":3}],\"address\":{\"street\":\"1935 Lower Mall\",\"city\":\"Vancouver\",\"postal_code\":\"V6T 1X1\"},\"friends\":[{\"name\":\"Tommy\",\"age\":20},{\"name\":\"Joe\",\"age\":20}],\"graduated\":false, \"university\": \"UBC\"}";
 
-    let mut json1 = yiran_json::parse_json(json_str).unwrap();
+    let mut json1 = parse_json(json_str).unwrap();
 
-    json1["name"] = "Bob".to_string().to_json();
-    json1["courses"][0]["credits"] = 4.to_json();
-    json1["additional"] = "This is an additional field".to_string().to_json();
+    json1["courses"].push(parse_json("{\"name\":\"ELEC 201\",\"credits\":4}").unwrap());
+    json1["courses"].push(parse_json("{\"name\":\"BIOL 112\",\"credits\":3}").unwrap());
 
-    let json2 = yiran_json::parse_json(&json1.dump(2, false)).unwrap();
+    json1["message"] = JsonNode::Array(vec![
+        JsonNode::String("早上好中国！".to_string()),
+        JsonNode::String("现在我有冰淇淋，".to_string()),
+        JsonNode::String("我很喜欢冰淇淋。".to_string()),
+    ]);
+
+    let json2 = parse_json(&json1.dump(2, false)).unwrap();
     assert_eq!(json2, json1);
     println!("{}", json2.dump(2, false));
 }
