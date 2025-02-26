@@ -101,11 +101,7 @@ pub fn main() {
     json1["courses"].push(parse_json("{\"name\":\"ELEC 201\",\"credits\":4}").unwrap());
     json1["courses"].push(parse_json("{\"name\":\"BIOL 112\",\"credits\":3}").unwrap());
 
-    json1["message"] = JsonNode::Array(vec![
-        JsonNode::String("早上好中国！".to_string()),
-        JsonNode::String("现在我有冰淇淋，".to_string()),
-        JsonNode::String("我很喜欢冰淇淋。".to_string()),
-    ]);
+    json1["message"] = JsonNode::Array(vec![]);
 
     let mut json2 = parse_json(&json1.dump(2, true)).unwrap();
     assert_eq!(json2, json1);

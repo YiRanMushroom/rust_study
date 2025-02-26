@@ -4,11 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-proc-macro2 = "1.0.93"
-quote = "1.0.38"
-syn = "2.0.98"
+proc-macro-essentials = { git = "https://github.com/YiRanMushroom/proc_macro_essentials", tag = "v1.1.1" }
 static_assertions = "1.1.0"
-proc-macro-crate = "3.2.0"
+
 
 [lib]
 proc-macro = true

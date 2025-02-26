@@ -1,23 +1,13 @@
-use proc_macro2::Span;
-use proc_macro_crate::{crate_name, FoundCrate};
+use proc_macro_essentials::{quote, syn,proc_macro2};
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Data, DeriveInput, Fields};
-use syn::{Ident, LitInt};
 
-fn get_json_crate_name() -> proc_macro2::TokenStream {
-    proc_macro2::TokenStream::from(
-        match crate_name("json").expect("json must be present in Cargo.toml") {
-            FoundCrate::Itself => quote!(json),
-            FoundCrate::Name(name) => {
-                let ident = Ident::new(&name, Span::call_site());
-                quote! {#ident}
-            }
-        },
-    )
-}
+use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{LitInt};
+
+use proc_macro_essentials::utils::get_call_site_crate_name;
 
 fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
-    let crate_name = get_json_crate_name();
+    let crate_name = get_call_site_crate_name("json");
     let name = &input.ident;
     let fields = if let Data::Struct(data_struct) = &input.data {
         if let Fields::Named(fields_named) = &data_struct.fields {
@@ -62,7 +52,7 @@ fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
 }
 
 fn json_tuple(input: DeriveInput) -> proc_macro2::TokenStream {
-    let crate_name = get_json_crate_name();
+    let crate_name = get_call_site_crate_name("json");
     let name = &input.ident;
     let fields = if let Data::Struct(data_struct) = &input.data {
         if let Fields::Unnamed(fields_unnamed) = &data_struct.fields {
@@ -110,7 +100,7 @@ fn json_tuple(input: DeriveInput) -> proc_macro2::TokenStream {
 }
 
 fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
-    let crate_name = get_json_crate_name();
+    let crate_name = get_call_site_crate_name("json");
     let name = &input.ident;
     let variants = if let Data::Enum(data_enum) = &input.data {
         &data_enum.variants
