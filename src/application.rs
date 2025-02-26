@@ -94,16 +94,55 @@ mod tests {
 
 pub fn main() {
     use yiran_json::*;
-    let json_str = "{\"first name\":\"Yiran\", \"last name\": \"王\", \"age\":20,\"is_student\":true,\"courses\":[{\"name\":\"CPEN 212\",\"credits\":4},{\"name\":\"CPSC 221\",\"credits\":4},{\"name\":\"Math 256\",\"credits\":3}],\"address\":{\"street\":\"1935 Lower Mall\",\"city\":\"Vancouver\",\"postal_code\":\"V6T 1X1\"},\"friends\":[{\"name\":\"Tommy\",\"age\":20},{\"name\":\"Joe\",\"age\":20}],\"graduated\":false, \"university\": \"UBC\"}";
 
-    let mut json1 = parse_json(json_str).unwrap();
+    let json = json! {
+        {
+            "first name": "Yiran",
+            "last name": "王",
+            "age": 20,
+            "is_student": true,
+            "courses": [
+                {
+                    "name": "CPEN 212",
+                    "credits": 4
+                },
+                {
+                    "name": "CPSC 221",
+                    "credits": 4
+                },
+                {
+                    "name": "Math 256",
+                    "credits": 3
+                },
+                {
+                    "name": "ELEC 201",
+                    "credits": 4
+                },
+                {
+                    "name": "BIOL 112",
+                    "credits": 3
+                }
+            ],
+            "address": {
+                "street": "1935 Lower Mall",
+                "city": "Vancouver",
+                "postal_code": "V6T 1X1"
+            },
+            "friends": [
+                {
+                    "name": "Tommy",
+                    "age": 20
+                },
+                {
+                    "name": "Joe",
+                    "age": 20
+                }
+            ],
+            "graduated": false,
+            "university": "UBC",
+            "message": ["你好中国", "我喜欢C++", "我喜欢Rust"]
+        }
+    };
 
-    json1["courses"].push(parse_json("{\"name\":\"ELEC 201\",\"credits\":4}").unwrap());
-    json1["courses"].push(parse_json("{\"name\":\"BIOL 112\",\"credits\":3}").unwrap());
-
-    json1["message"] = JsonNode::Array(vec![]);
-
-    let mut json2 = parse_json(&json1.dump(2, true)).unwrap();
-    assert_eq!(json2, json1);
-    println!("{}", json2.dump(2, false));
+    println!("{}", json.dump(2, false));
 }

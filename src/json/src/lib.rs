@@ -12,6 +12,7 @@ pub use json_basic::FromAndToJson;
 pub use json_basic::JsonNode;
 pub use json_dumper::dump_json_node;
 pub use macros::JsonType;
+pub use macros::json;
 
 pub fn parse_json(input: &str) -> Option<json_basic::JsonNode> {
     /*    let (tokens, success) = lex_string_to_tokens(input);
