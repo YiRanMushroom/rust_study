@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::hash::Hash;
 use std::ops::{Index, IndexMut};
 use std::thread::panicking;
 
@@ -127,25 +128,30 @@ impl IndexMut<usize> for JsonNode {
     }
 }
 
-pub trait FromAndToJson {
+pub trait FromJson {
     fn from_json(json: &JsonNode) -> Self;
+}
+
+pub trait ToJson {
     fn to_json(&self) -> JsonNode;
 }
 
-impl FromAndToJson for String {
+impl FromJson for String {
     fn from_json(json: &JsonNode) -> Self {
         match json {
             JsonNode::String(s) => s.clone(),
             _ => panic!("Cannot convert non-string type to string"),
         }
     }
+}
 
+impl ToJson for String {
     fn to_json(&self) -> JsonNode {
         JsonNode::String(self.clone())
     }
 }
 
-impl FromAndToJson for Vec<JsonNode> {
+/*impl FromAndToJson for Vec<JsonNode> {
     fn from_json(json: &JsonNode) -> Self {
         match json {
             JsonNode::Array(arr) => arr.clone(),
@@ -156,9 +162,29 @@ impl FromAndToJson for Vec<JsonNode> {
     fn to_json(&self) -> JsonNode {
         JsonNode::Array(self.clone())
     }
+}*/
+impl<T> FromJson for Vec<T>
+where
+    T: FromJson,
+{
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Array(arr) => arr.iter().map(|x| T::from_json(x)).collect(),
+            _ => panic!("Cannot convert non-array type to array"),
+        }
+    }
 }
 
-impl FromAndToJson for HashMap<String, JsonNode> {
+impl<T> ToJson for Vec<T>
+where
+    T: ToJson,
+{
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Array(self.iter().map(|x| x.to_json()).collect())
+    }
+}
+
+/*impl FromAndToJson for HashMap<String, JsonNode> {
     fn from_json(json: &JsonNode) -> Self {
         match json {
             JsonNode::Object(obj) => obj.clone(),
@@ -169,9 +195,46 @@ impl FromAndToJson for HashMap<String, JsonNode> {
     fn to_json(&self) -> JsonNode {
         JsonNode::Object(self.clone())
     }
+}*/
+
+impl<T> FromJson for HashMap<String, T>
+where
+    T: FromJson,
+{
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Object(obj) => obj
+                .iter()
+                .map(|(k, v)| (k.clone(), T::from_json(&v)))
+                .collect(),
+            _ => panic!("Cannot convert non-object type to object"),
+        }
+    }
 }
 
-impl FromAndToJson for bool {
+impl<T> ToJson for HashMap<String, T>
+where
+    T: ToJson,
+{
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Object(self.iter().map(|(k, v)| (k.clone(), v.to_json())).collect())
+    }
+}
+
+impl<T> ToJson for HashMap<&str, T>
+where
+    T: ToJson,
+{
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Object(
+            self.iter()
+                .map(|(k, v)| (k.to_string(), v.to_json()))
+                .collect(),
+        )
+    }
+}
+
+/*impl FromAndToJson for bool {
     fn from_json(json: &JsonNode) -> Self {
         match json {
             JsonNode::Boolean(b) => b.clone(),
@@ -182,10 +245,25 @@ impl FromAndToJson for bool {
     fn to_json(&self) -> JsonNode {
         JsonNode::Boolean(self.clone())
     }
+}*/
+
+impl FromJson for bool {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Boolean(b) => b.clone(),
+            _ => panic!("Cannot convert non-boolean type to boolean"),
+        }
+    }
+}
+
+impl ToJson for bool {
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Boolean(self.clone())
+    }
 }
 
 // all number types
-impl FromAndToJson for f64 {
+/*impl FromAndToJson for f64 {
     fn from_json(json: &JsonNode) -> Self {
         match json {
             JsonNode::Number(n) => n.clone(),
@@ -193,6 +271,21 @@ impl FromAndToJson for f64 {
         }
     }
 
+    fn to_json(&self) -> JsonNode {
+        JsonNode::Number(self.clone())
+    }
+}*/
+
+impl FromJson for f64 {
+    fn from_json(json: &JsonNode) -> Self {
+        match json {
+            JsonNode::Number(n) => n.clone(),
+            _ => panic!("Cannot convert non-number type to number"),
+        }
+    }
+}
+
+impl ToJson for f64 {
     fn to_json(&self) -> JsonNode {
         JsonNode::Number(self.clone())
     }
@@ -208,14 +301,6 @@ pub struct JsonObjIterMut<'a> {
 
 pub struct JsonObjIntoIter {
     map_iter: std::collections::hash_map::IntoIter<String, JsonNode>,
-}
-
-pub struct JsonArrIterRef<'a> {
-    vec_iter: std::slice::Iter<'a, JsonNode>,
-}
-
-pub struct JsonArrIterMut<'a> {
-    vec_iter: std::slice::IterMut<'a, JsonNode>,
 }
 
 pub struct JsonArrIntoIter {
@@ -245,23 +330,6 @@ impl Iterator for JsonObjIntoIter {
         self.map_iter.next()
     }
 }
-
-impl<'a> Iterator for JsonArrIterRef<'a> {
-    type Item = &'a JsonNode;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.vec_iter.next()
-    }
-}
-
-impl<'a> Iterator for JsonArrIterMut<'a> {
-    type Item = &'a mut JsonNode;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.vec_iter.next()
-    }
-}
-
 impl Iterator for JsonArrIntoIter {
     type Item = JsonNode;
 
@@ -298,20 +366,16 @@ impl JsonNode {
         }
     }
 
-    pub fn arr_iter(&self) -> Option<JsonArrIterRef> {
+    pub fn arr_iter(&self) -> Option<std::slice::Iter<JsonNode>> {
         match self {
-            JsonNode::Array(arr) => Some(JsonArrIterRef {
-                vec_iter: arr.iter(),
-            }),
+            JsonNode::Array(arr) => Some(arr.iter()),
             _ => None,
         }
     }
 
-    pub fn arr_iter_mut(&mut self) -> Option<JsonArrIterMut> {
+    pub fn arr_iter_mut(&mut self) -> Option<std::slice::IterMut<JsonNode>> {
         match self {
-            JsonNode::Array(arr) => Some(JsonArrIterMut {
-                vec_iter: arr.iter_mut(),
-            }),
+            JsonNode::Array(arr) => Some(arr.iter_mut()),
             _ => None,
         }
     }
@@ -403,14 +467,16 @@ impl JsonNode {
 macro_rules! impl_from_and_to_json_for_number {
     ($($t:ty),*) => {
         $(
-            impl FromAndToJson for $t {
+            impl FromJson for $t {
                 fn from_json(json: &JsonNode) -> Self {
                     match json {
                         JsonNode::Number(n) => n.clone() as $t,
                         _ => panic!("Cannot convert non-number type to number"),
                     }
                 }
+            }
 
+            impl ToJson for $t {
                 fn to_json(&self) -> JsonNode {
                     JsonNode::Number(self.clone() as f64)
                 }
@@ -429,21 +495,19 @@ impl_from_and_to_json_for_number!(
     i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32
 );
 
-impl FromAndToJson for &str {
-    fn from_json(json: &JsonNode) -> Self {
-        panic!("Cannot do not convert from JsonNode to &str")
-    }
-
+impl ToJson for &str {
     fn to_json(&self) -> JsonNode {
         JsonNode::String(self.to_string())
     }
 }
 
-impl FromAndToJson for JsonNode {
+impl FromJson for JsonNode {
     fn from_json(json: &JsonNode) -> Self {
         json.clone()
     }
-    
+}
+
+impl ToJson for JsonNode {
     fn to_json(&self) -> JsonNode {
         self.clone()
     }

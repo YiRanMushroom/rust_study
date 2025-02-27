@@ -38,15 +38,17 @@ fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
     });
 
     let expanded: proc_macro2::TokenStream = quote! {
-        impl #crate_name::FromAndToJson for #name {
+        impl #crate_name::FromJson for #name {
+            fn from_json(json: &#crate_name::JsonNode) -> Self {
+                Self{#(#from_json_fields)*}
+            }
+        }
+        
+        impl #crate_name::ToJson for #name {
             fn to_json(&self) -> #crate_name::JsonNode {
                 let mut json = #crate_name::JsonNode::Object(std::collections::HashMap::new());
                 #(#to_json_fields)*
                 json
-            }
-
-            fn from_json(json: &#crate_name::JsonNode) -> Self {
-                Self{#(#from_json_fields)*}
             }
         }
     };
@@ -85,15 +87,17 @@ fn json_tuple(input: DeriveInput) -> proc_macro2::TokenStream {
     let fields_len = fields.len();
 
     let expanded = quote! {
-        impl #crate_name::FromAndToJson for #name {
+        impl #crate_name::FromJson for #name {
+            fn from_json(json: &#crate_name::JsonNode) -> Self {
+                Self{#(#from_json_fields)*}
+            }
+        }
+        
+        impl #crate_name::ToJson for #name {
             fn to_json(&self) -> #crate_name::JsonNode {
                 let mut json = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
                 #(#to_json_fields)*
                 json
-            }
-
-            fn from_json(json: &#crate_name::JsonNode) -> Self {
-                Self{#(#from_json_fields)*}
             }
         }
 
@@ -232,7 +236,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
     });
 
     let expanded = quote! {
-        impl #crate_name::FromAndToJson for #name {
+        impl #crate_name::FromJson for #name {
             fn from_json(json: &#crate_name::JsonNode) -> Self {
                 match &json["type"] {
                     #crate_name::JsonNode::String(s) => match s.as_str() {
@@ -242,7 +246,9 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
                     _ => panic!("Invalid variant")
                 }
             }
-
+        }
+        
+        impl #crate_name::ToJson for #name {
             fn to_json(&self) -> #crate_name::JsonNode {
                 let mut json = #crate_name::JsonNode::Object(std::collections::HashMap::new());
                 match self {
@@ -471,7 +477,7 @@ fn json_parse_impl(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let crate_name = get_call_site_crate_name("json");
     proc_macro::TokenStream::from(quote! {
         {
-            use #crate_name::FromAndToJson;
+            use #crate_name::{FromJson, ToJson};
             #result
         }
     })
