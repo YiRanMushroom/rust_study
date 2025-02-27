@@ -3,7 +3,7 @@ use proc_macro_essentials::syn::parse::{Parse, ParseStream};
 use proc_macro_essentials::{proc_macro2, quote, syn};
 use quote::{format_ident, quote};
 use std::fmt::format;
-
+use proc_macro_essentials::quote::ToTokens;
 use syn::LitInt;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
@@ -306,9 +306,8 @@ impl Parse for MacroJsonNode {
                         let token_stream: proc_macro2::TokenStream = inner_content.parse()?;
                         key = StringLiteralOrTokenStream::TokenStream(token_stream);
                     } else if content.peek(syn::Ident) {
-                        key = StringLiteralOrTokenStream::StringLiteral(
-                            content.parse::<Ident>()?.to_string(),
-                        );
+                        let ident: Ident = content.parse()?;
+                        key = StringLiteralOrTokenStream::TokenStream(quote! {#ident});
                     } else {
                         return Err(syn::Error::new(
                             content.span(),

@@ -153,7 +153,6 @@ pub fn main() {
         "graduated": false,
         "university": "UBC",
         "message": ["你好中国", "我喜欢C++", "我喜欢Rust"]
-
     };
 
     println!("{}", json.dump(2, false));
