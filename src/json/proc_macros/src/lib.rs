@@ -1,7 +1,8 @@
-use proc_macro::TokenStream;
+use proc_macro_essentials::proc_macro2::Ident;
 use proc_macro_essentials::syn::parse::{Parse, ParseStream};
 use proc_macro_essentials::{proc_macro2, quote, syn};
 use quote::{format_ident, quote};
+use std::fmt::format;
 
 use syn::LitInt;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
@@ -267,12 +268,19 @@ pub fn json_type(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     }
 }
 
+#[derive(Debug)]
+enum StringLiteralOrTokenStream {
+    StringLiteral(String),
+    TokenStream(proc_macro2::TokenStream),
+}
+
 enum MacroJsonNode {
-    Object(std::collections::HashMap<String, MacroJsonNode>),
+    Object(std::vec::Vec<(StringLiteralOrTokenStream, MacroJsonNode)>),
     Array(std::vec::Vec<MacroJsonNode>),
     String(String),
     Number(f64),
     Boolean(bool),
+    TokenStream(proc_macro2::TokenStream),
     Null,
 }
 
@@ -281,12 +289,44 @@ impl Parse for MacroJsonNode {
         if input.peek(syn::token::Brace) {
             let content;
             syn::braced!(content in input);
-            let mut obj = std::collections::HashMap::new();
+            let mut obj = std::vec::Vec::new();
             while !content.is_empty() {
-                let key: syn::LitStr = content.parse()?;
+                let key;
+                if content.peek(syn::LitStr) {
+                    key = StringLiteralOrTokenStream::StringLiteral(
+                        content.parse::<syn::LitStr>()?.value(),
+                    );
+                } else if content.peek(syn::Token![#]) {
+                    content.parse::<syn::Token![#]>()?;
+
+                    let inner_content;
+
+                    if content.peek(syn::token::Paren) {
+                        syn::parenthesized!(inner_content in content);
+                        let token_stream: proc_macro2::TokenStream = inner_content.parse()?;
+                        key = StringLiteralOrTokenStream::TokenStream(token_stream);
+                    } else if content.peek(syn::Ident) {
+                        key = StringLiteralOrTokenStream::StringLiteral(
+                            content.parse::<Ident>()?.to_string(),
+                        );
+                    } else {
+                        return Err(syn::Error::new(
+                            content.span(),
+                            "identifier after # is not valid",
+                        ));
+                    }
+                } else {
+                    return Err(syn::Error::new(content.span(), "Invalid key"));
+                }
+
+                if !content.peek(syn::Token![:]) {
+                    return Err(syn::Error::new(content.span(), "Expects a colon"));
+                }
+
                 content.parse::<syn::Token![:]>()?;
                 let value = MacroJsonNode::parse(&content)?;
-                obj.insert(key.value(), value);
+                obj.push((key, value));
+
                 if content.peek(syn::Token![,]) {
                     content.parse::<syn::Token![,]>()?;
                 }
@@ -320,12 +360,32 @@ impl Parse for MacroJsonNode {
             } else {
                 Err(syn::Error::new(ident.span(), "Invalid identifier"))
             }
-        } else if input.peek(syn::LitBool) { 
+        } else if input.peek(syn::LitBool) {
             let lit: syn::LitBool = input.parse()?;
             Ok(MacroJsonNode::Boolean(lit.value))
-        }
-        else {
-            Err(syn::Error::new(input.span(), "Invalid token"))
+        } else if input.peek(syn::Token![#]) {
+            // could be a single token or a token stream with ()
+            input.parse::<syn::Token![#]>()?;
+
+            let content;
+            if input.peek(syn::token::Paren) {
+                syn::parenthesized!(content in input);
+                let token_stream = content.parse()?;
+                Ok(MacroJsonNode::TokenStream(token_stream))
+            } else if input.peek(syn::Ident) {
+                let ident: Ident = input.parse()?;
+                Ok(MacroJsonNode::TokenStream(quote! {#ident}))
+            } else {
+                Err(syn::Error::new(
+                    input.span(),
+                    "Identifier after # is not valid",
+                ))
+            }
+        } else {
+            Err(syn::Error::new(
+                input.span(),
+                format!("Invalid token at: {:?}", input),
+            ))
         }
     }
 }
@@ -336,20 +396,20 @@ fn generate_json_call_site(compiler_json: MacroJsonNode) -> proc_macro::TokenStr
     match compiler_json {
         MacroJsonNode::String(s) => {
             let expanded = quote! {
-                #crate_name::JsonNode::String(#s.to_string())
+                #s.to_json()
             };
             proc_macro::TokenStream::from(expanded)
         }
         MacroJsonNode::Number(n) => {
             let number_literal = proc_macro2::Literal::f64_unsuffixed(n);
             let expanded = quote! {
-                #crate_name::JsonNode::Number(#number_literal)
+                #number_literal.to_json()
             };
             proc_macro::TokenStream::from(expanded)
         }
         MacroJsonNode::Boolean(b) => {
             let expanded = quote! {
-                #crate_name::JsonNode::Boolean(#b)
+                #b.to_json()
             };
             proc_macro::TokenStream::from(expanded)
         }
@@ -365,7 +425,7 @@ fn generate_json_call_site(compiler_json: MacroJsonNode) -> proc_macro::TokenStr
                 .map(|node| proc_macro2::TokenStream::from(generate_json_call_site(node)))
                 .collect::<Vec<_>>();
             let expanded = quote! {
-                #crate_name::JsonNode::Array(std::vec::Vec::from([#(#arr),*]))
+                std::vec::Vec::from([#(#arr),*]).to_json()
             };
             proc_macro::TokenStream::from(expanded)
         }
@@ -373,23 +433,76 @@ fn generate_json_call_site(compiler_json: MacroJsonNode) -> proc_macro::TokenStr
             let arr = map
                 .into_iter()
                 .map(|(key, value)| {
-                    let key = proc_macro2::Literal::string(&key);
+                    let key_token_stream = match key {
+                        StringLiteralOrTokenStream::StringLiteral(s) => {
+                            let key = proc_macro2::Literal::string(&s);
+                            quote! {
+                                #key.to_string()
+                            }
+                        }
+                        StringLiteralOrTokenStream::TokenStream(token_stream) => {
+                            quote! {
+                                #token_stream.to_string()
+                            }
+                        }
+                    };
                     let value = proc_macro2::TokenStream::from(generate_json_call_site(value));
                     quote! {
-                        (#key.to_string(), #value)
+                        (#key_token_stream, #value)
                     }
                 })
                 .collect::<Vec<_>>();
             let expanded = quote! {
-                #crate_name::JsonNode::Object(std::collections::HashMap::from([#(#arr),*]))
+                std::collections::HashMap::from([#(#arr),*]).to_json()
+            };
+            proc_macro::TokenStream::from(expanded)
+        }
+        MacroJsonNode::TokenStream(token_stream) => {
+            let expanded = quote! {
+                (#token_stream).to_json()
             };
             proc_macro::TokenStream::from(expanded)
         }
     }
 }
 
+fn json_parse_impl(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let compiler_json = syn::parse_macro_input!(input as MacroJsonNode);
+    let result = proc_macro2::TokenStream::from(generate_json_call_site(compiler_json));
+    let crate_name = get_call_site_crate_name("json");
+    proc_macro::TokenStream::from(quote! {
+        {
+            use #crate_name::FromAndToJson;
+            #result
+        }
+    })
+}
+
 #[proc_macro]
 pub fn json(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let compiler_json = parse_macro_input!(input as MacroJsonNode);
-    generate_json_call_site(compiler_json)
+    json_parse_impl(input)
+}
+
+#[proc_macro]
+pub fn json_object(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // add {} to the input
+    let input_tokens = proc_macro2::TokenStream::from(input);
+    let expanded = quote! {
+        {
+            #input_tokens
+        }
+    };
+    json_parse_impl(proc_macro::TokenStream::from(expanded))
+}
+
+#[proc_macro]
+pub fn json_array(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // add [] to the input
+    let input_tokens = proc_macro2::TokenStream::from(input);
+    let expanded = quote! {
+        [
+            #input_tokens
+        ]
+    };
+    json_parse_impl(proc_macro::TokenStream::from(expanded))
 }

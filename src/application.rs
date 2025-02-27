@@ -92,56 +92,68 @@ mod tests {
     }
 }
 
+#[derive(Debug, Clone, Default, yiran_json::JsonType, PartialEq)]
+struct Friend {
+    name: String,
+    age: i32,
+}
+
 pub fn main() {
     use yiran_json::*;
 
-    let json = json! {
-        {
-            "first name": "Yiran",
-            "last name": "王",
-            "age": 20,
-            "is_student": true,
-            "courses": [
-                {
-                    "name": "CPEN 212",
-                    "credits": 4
-                },
-                {
-                    "name": "CPSC 221",
-                    "credits": 4
-                },
-                {
-                    "name": "Math 256",
-                    "credits": 3
-                },
-                {
-                    "name": "ELEC 201",
-                    "credits": 4
-                },
-                {
-                    "name": "BIOL 112",
-                    "credits": 3
-                }
-            ],
-            "address": {
-                "street": "1935 Lower Mall",
-                "city": "Vancouver",
-                "postal_code": "V6T 1X1"
+    let first_name = "Yiran";
+    let tommy = Friend {
+        name: "Tommy".to_string(),
+        age: 20,
+    };
+
+    let joe = Friend {
+        name: "Joe".to_string(),
+        age: 20,
+    };
+
+    let first_name_key = "first name";
+
+    let json = json_object! {
+        #first_name_key: #(first_name.to_string()),
+        "last name": "王",
+        "age": 20,
+        "is_student": true,
+        "courses": [
+            {
+                "name": "CPEN 212",
+                "credits": 4
             },
-            "friends": [
-                {
-                    "name": "Tommy",
-                    "age": 20
-                },
-                {
-                    "name": "Joe",
-                    "age": 20
-                }
-            ],
-            "graduated": false,
-            "university": "UBC",
-            "message": ["你好中国", "我喜欢C++", "我喜欢Rust"]
-        }
+            {
+                "name": "CPSC 221",
+                "credits": 4
+            },
+            {
+                "name": "Math 256",
+                "credits": 3
+            },
+            {
+                "name": "ELEC 201",
+                "credits": 4
+            },
+            {
+                "name": "BIOL 112",
+                "credits": 3
+            }
+        ],
+        "address": {
+            "street": "1935 Lower Mall",
+            "city": "Vancouver",
+            "postal_code": "V6T 1X1"
+        },
+        "friends": [
+            #tommy,
+            #(joe)
+        ],
+        "graduated": false,
+        "university": "UBC",
+        "message": ["你好中国", "我喜欢C++", "我喜欢Rust"]
+
     };
 
     println!("{}", json.dump(2, false));

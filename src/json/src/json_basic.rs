@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
+use std::thread::panicking;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum JsonNode {
@@ -427,3 +428,23 @@ macro_rules! impl_from_and_to_json_for_number {
 impl_from_and_to_json_for_number!(
     i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32
 );
+
+impl FromAndToJson for &str {
+    fn from_json(json: &JsonNode) -> Self {
+        panic!("Cannot do not convert from JsonNode to &str")
+    }
+
+    fn to_json(&self) -> JsonNode {
+        JsonNode::String(self.to_string())
+    }
+}
+
+impl FromAndToJson for JsonNode {
+    fn from_json(json: &JsonNode) -> Self {
+        json.clone()
+    }
+    
+    fn to_json(&self) -> JsonNode {
+        self.clone()
+    }
+}

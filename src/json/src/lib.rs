@@ -13,14 +13,10 @@ pub use json_basic::JsonNode;
 pub use json_dumper::dump_json_node;
 pub use macros::JsonType;
 pub use macros::json;
+pub use macros::json_array;
+pub use macros::json_object;
 
 pub fn parse_json(input: &str) -> Option<json_basic::JsonNode> {
-    /*    let (tokens, success) = lex_string_to_tokens(input);
-    if success {
-        parse_tokens_to_json(tokens)
-    } else {
-        None
-    }*/
     let tokens = lex_string_to_tokens(input);
     parse_tokens_to_json(tokens?)
 }
