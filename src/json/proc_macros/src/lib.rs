@@ -435,44 +435,40 @@ fn generate_json_call_site(compiler_json: MacroJsonNode) -> proc_macro::TokenStr
         MacroJsonNode::Array(arr) => {
             let arr = arr
                 .into_iter()
-                .map(|node| proc_macro2::TokenStream::from(generate_json_call_site(node)))
-                .collect::<Vec<_>>();
+                .map(|node| proc_macro2::TokenStream::from(generate_json_call_site(node)));
             let expanded = quote! {
-                std::vec::Vec::from([#(#arr),*]).to_json()
+                #crate_name::JsonNode::Array(std::vec::Vec::<#crate_name::JsonNode>::from([#(#arr),*]))
             };
             proc_macro::TokenStream::from(expanded)
         }
         MacroJsonNode::Object(map) => {
-            let arr = map
-                .into_iter()
-                .map(|(key, value)| {
-                    let key_token_stream = match key {
-                        StringLiteralOrTokenStream::StringLiteral(s) => {
-                            let key = proc_macro2::Literal::string(&s);
-                            quote! {
-                                #key.to_string()
-                            }
+            let arr = map.into_iter().map(|(key, value)| {
+                let key_token_stream = match key {
+                    StringLiteralOrTokenStream::StringLiteral(s) => {
+                        let key = proc_macro2::Literal::string(&s);
+                        quote! {
+                            #key.to_string()
                         }
-                        StringLiteralOrTokenStream::TokenStream(token_stream) => {
-                            quote! {
-                                #token_stream.to_string()
-                            }
-                        }
-                    };
-                    let value = proc_macro2::TokenStream::from(generate_json_call_site(value));
-                    quote! {
-                        (#key_token_stream, #value)
                     }
-                })
-                .collect::<Vec<_>>();
+                    StringLiteralOrTokenStream::TokenStream(token_stream) => {
+                        quote! {
+                            #token_stream
+                        }
+                    }
+                };
+                let value = proc_macro2::TokenStream::from(generate_json_call_site(value));
+                quote! {
+                    (#key_token_stream, #value)
+                }
+            });
             let expanded = quote! {
-                std::collections::HashMap::from([#(#arr),*]).to_json()
+                #crate_name::JsonNode::Object(std::collections::HashMap::<String, #crate_name::JsonNode>::from([#(#arr),*]))
             };
             proc_macro::TokenStream::from(expanded)
         }
         MacroJsonNode::TokenStream(token_stream) => {
             let expanded = quote! {
-                (#token_stream).to_json()
+                #token_stream
             };
             proc_macro::TokenStream::from(expanded)
         }

@@ -151,18 +151,6 @@ impl ToJson for String {
     }
 }
 
-/*impl FromAndToJson for Vec<JsonNode> {
-    fn from_json(json: &JsonNode) -> Self {
-        match json {
-            JsonNode::Array(arr) => arr.clone(),
-            _ => panic!("Cannot convert non-array type to array"),
-        }
-    }
-
-    fn to_json(&self) -> JsonNode {
-        JsonNode::Array(self.clone())
-    }
-}*/
 impl<T> FromJson for Vec<T>
 where
     T: FromJson,
@@ -234,19 +222,6 @@ where
     }
 }
 
-/*impl FromAndToJson for bool {
-    fn from_json(json: &JsonNode) -> Self {
-        match json {
-            JsonNode::Boolean(b) => b.clone(),
-            _ => panic!("Cannot convert non-boolean type to boolean"),
-        }
-    }
-
-    fn to_json(&self) -> JsonNode {
-        JsonNode::Boolean(self.clone())
-    }
-}*/
-
 impl FromJson for bool {
     fn from_json(json: &JsonNode) -> Self {
         match json {
@@ -261,20 +236,6 @@ impl ToJson for bool {
         JsonNode::Boolean(self.clone())
     }
 }
-
-// all number types
-/*impl FromAndToJson for f64 {
-    fn from_json(json: &JsonNode) -> Self {
-        match json {
-            JsonNode::Number(n) => n.clone(),
-            _ => panic!("Cannot convert non-number type to number"),
-        }
-    }
-
-    fn to_json(&self) -> JsonNode {
-        JsonNode::Number(self.clone())
-    }
-}*/
 
 impl FromJson for f64 {
     fn from_json(json: &JsonNode) -> Self {
@@ -485,12 +446,6 @@ macro_rules! impl_from_and_to_json_for_number {
     };
 }
 
-/*
-    (pattern) => {
-
-    };
-*/
-
 impl_from_and_to_json_for_number!(
     i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32
 );
@@ -498,17 +453,5 @@ impl_from_and_to_json_for_number!(
 impl ToJson for &str {
     fn to_json(&self) -> JsonNode {
         JsonNode::String(self.to_string())
-    }
-}
-
-impl FromJson for JsonNode {
-    fn from_json(json: &JsonNode) -> Self {
-        json.clone()
-    }
-}
-
-impl ToJson for JsonNode {
-    fn to_json(&self) -> JsonNode {
-        self.clone()
     }
 }

@@ -113,13 +113,13 @@ pub fn main() {
     };
 
     let first_name_key = "first name";
-    
+
     let mut input_str: String = String::default();
-    
+
     std::io::stdin().read_line(&mut input_str).unwrap();
 
     let json = json_object! {
-        #first_name_key: #(first_name.to_string()),
+        #(first_name_key.to_string()): #(first_name.to_json()),
         "last name": "Wang",
         "age": 20,
         "is_student": true,
@@ -151,14 +151,13 @@ pub fn main() {
             "postal_code": "V6T 1X1"
         },
         "friends": [
-            #(a),
-            #b
+            #(a.to_json()),
+            #(b.to_json())
         ],
         "graduated": false,
         "university": "UBC",
         "message": ["Hi, mom!", "Hello, World!", "Rustrover is the goat"],
-        "additional_message" : #(input_str.trim())
+        "additional_message" : #(input_str.trim().to_json())
     };
-
     println!("{}", json.dump(2, false));
 }
