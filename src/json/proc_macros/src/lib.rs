@@ -1,9 +1,9 @@
 use proc_macro_essentials::proc_macro2::Ident;
+use proc_macro_essentials::quote::ToTokens;
 use proc_macro_essentials::syn::parse::{Parse, ParseStream};
 use proc_macro_essentials::{proc_macro2, quote, syn};
 use quote::{format_ident, quote};
 use std::fmt::format;
-use proc_macro_essentials::quote::ToTokens;
 use syn::LitInt;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
@@ -43,7 +43,7 @@ fn json_struct(input: DeriveInput) -> proc_macro2::TokenStream {
                 Self{#(#from_json_fields)*}
             }
         }
-        
+
         impl #crate_name::ToJson for #name {
             fn to_json(&self) -> #crate_name::JsonNode {
                 let mut json = #crate_name::JsonNode::Object(std::collections::HashMap::new());
@@ -92,7 +92,7 @@ fn json_tuple(input: DeriveInput) -> proc_macro2::TokenStream {
                 Self{#(#from_json_fields)*}
             }
         }
-        
+
         impl #crate_name::ToJson for #name {
             fn to_json(&self) -> #crate_name::JsonNode {
                 let mut json = #crate_name::JsonNode::Array(std::vec::Vec::with_capacity(#fields_len));
@@ -247,7 +247,7 @@ fn json_enum(input: DeriveInput) -> proc_macro2::TokenStream {
                 }
             }
         }
-        
+
         impl #crate_name::ToJson for #name {
             fn to_json(&self) -> #crate_name::JsonNode {
                 let mut json = #crate_name::JsonNode::Object(std::collections::HashMap::new());
@@ -334,6 +334,10 @@ impl Parse for MacroJsonNode {
 
                 if content.peek(syn::Token![,]) {
                     content.parse::<syn::Token![,]>()?;
+                } else {
+                    if !content.is_empty() {
+                        return Err(syn::Error::new(content.span(), "Expects a comma"));
+                    }
                 }
             }
             Ok(MacroJsonNode::Object(obj))
@@ -346,6 +350,10 @@ impl Parse for MacroJsonNode {
                 arr.push(value);
                 if content.peek(syn::Token![,]) {
                     content.parse::<syn::Token![,]>()?;
+                } else {
+                    if !content.is_empty() {
+                        return Err(syn::Error::new(content.span(), "Expects a comma"));
+                    }
                 }
             }
             Ok(MacroJsonNode::Array(arr))

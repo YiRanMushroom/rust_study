@@ -102,21 +102,25 @@ pub fn main() {
     use yiran_json::*;
 
     let first_name = "Yiran";
-    let tommy = Friend {
-        name: "Tommy".to_string(),
+    let a = Friend {
+        name: "A".to_string(),
         age: 20,
     };
 
-    let joe = Friend {
-        name: "Joe".to_string(),
+    let b = Friend {
+        name: "B".to_string(),
         age: 20,
     };
 
     let first_name_key = "first name";
+    
+    let mut input_str: String = String::default();
+    
+    std::io::stdin().read_line(&mut input_str).unwrap();
 
     let json = json_object! {
         #first_name_key: #(first_name.to_string()),
-        "last name": "王",
+        "last name": "Wang",
         "age": 20,
         "is_student": true,
         "courses": [
@@ -147,12 +151,13 @@ pub fn main() {
             "postal_code": "V6T 1X1"
         },
         "friends": [
-            #tommy,
-            #(joe)
+            #(a),
+            #b
         ],
         "graduated": false,
         "university": "UBC",
-        "message": ["你好中国", "我喜欢C++", "我喜欢Rust"]
+        "message": ["Hi, mom!", "Hello, World!", "Rustrover is the goat"],
+        "additional_message" : #(input_str.trim())
     };
 
     println!("{}", json.dump(2, false));
